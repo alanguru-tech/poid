@@ -41,89 +41,139 @@
             </div>
         </header>
 
-        <!-- THANH CHUYỂN TAB (TRANG CHÍNH & TRANG LỊCH SỬ RIÊNG) -->
-        <div class="bg-white border-b border-slate-200 shadow-sm">
-            <div class="max-w-7xl mx-auto px-4 flex gap-4">
-                <button onclick="switchTab('manage-view')" id="btn-tab-manage" class="py-3 px-4 font-semibold text-sm border-b-2 border-indigo-600 text-indigo-600 transition">Quản Lý Điểm & Thành Viên</button>
-                <button onclick="switchTab('history-view')" id="btn-tab-history" class="py-3 px-4 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition">Trang Lịch Sử Hoạt Động</button>
+        <!-- THANH CHUYỂN TAB -->
+        <div id="nav-tab-container" class="bg-white border-b border-slate-200 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 flex gap-4 overflow-x-auto">
+                <button onclick="switchTab('manage-view')" id="btn-tab-manage" class="py-3 px-4 font-semibold text-sm border-b-2 border-indigo-600 text-indigo-600 transition whitespace-nowrap">Bảng Điều Khiển</button>
+                <button onclick="switchTab('audit-history-view')" id="btn-tab-audit" class="py-3 px-4 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition whitespace-nowrap">Nhật Ký Cộng/Trừ Điểm</button>
+                <button onclick="switchTab('security-history-view')" id="btn-tab-security" class="py-3 px-4 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition whitespace-nowrap">Nhật Ký Thay Đổi & Bảo Mật</button>
+                <button onclick="switchTab('login-history-view')" id="btn-tab-login" class="py-3 px-4 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition whitespace-nowrap">Nhật Ký Đăng Nhập</button>
             </div>
         </div>
 
         <main class="max-w-7xl mx-auto px-4 py-8 w-full flex-1">
             
-            <!-- VIEW 1: QUẢN LÝ ĐIỂM & TÀI KHOẢN -->
+            <!-- VIEW 1: BẢNG ĐIỀU KHIỂN CHÍNH -->
             <div id="manage-view" class="space-y-6">
-                <!-- KHU VỰC THÊM TÀI KHOẢN (CHỈ HIỆN KHI CÓ QUYỀN QUẢN LÝ USER) -->
-                <div id="admin-panel" class="bg-white rounded-xl shadow p-6 hidden">
-                    <h2 class="text-lg font-bold text-slate-700 mb-4">Quản Lý Tài Khoản & Phân Quyền</h2>
-                    <form id="add-user-form" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <input type="text" id="new-name" placeholder="Họ và tên" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <input type="text" id="new-username" placeholder="Tên đăng nhập" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <input type="password" id="new-password" placeholder="Mật khẩu" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        </div>
-                        
-                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                            <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Phân quyền chi tiết:</label>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
-                                <label class="flex items-center gap-2 cursor-pointer">
-                                    <input type="checkbox" name="permission" value="xem_diem" checked class="rounded text-indigo-600 focus:ring-indigo-500"> Xem điểm số
-                                </label>
-                                <label class="flex items-center gap-2 cursor-pointer">
-                                    <input type="checkbox" name="permission" value="cong_tru_diem" class="rounded text-indigo-600 focus:ring-indigo-500"> Cộng/Trừ điểm thành viên
-                                </label>
-                                <label class="flex items-center gap-2 cursor-pointer">
-                                    <input type="checkbox" name="permission" value="quan_ly_user" class="rounded text-indigo-600 focus:ring-indigo-500"> Quản lý user (Thêm/Xóa)
-                                </label>
-                                <label class="flex items-center gap-2 cursor-pointer">
-                                    <input type="checkbox" name="permission" value="xem_nhat_ky" class="rounded text-indigo-600 focus:ring-indigo-500"> Xem trang lịch sử (Điểm & Đăng nhập)
-                                </label>
+                <!-- GIAO DIỆN CÁ NHÂN CHO USER THƯỜNG -->
+                <div id="user-personal-panel" class="grid grid-cols-1 md:grid-cols-3 gap-6 hidden">
+                    <!-- Cột 1: Điểm số & Đổi mật khẩu -->
+                    <div class="space-y-6">
+                        <div class="bg-white rounded-xl shadow p-6 flex flex-col justify-between border-l-4 border-indigo-600">
+                            <div>
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Điểm Số Hiện Tại Của Bạn</h3>
+                                <div class="text-4xl font-black text-indigo-600 my-4" id="personal-score">0</div>
                             </div>
+                            <p class="text-xs text-slate-500">Hãy cố gắng tích lũy thêm điểm thật tốt nhé!</p>
                         </div>
 
-                        <button type="submit" class="w-full bg-emerald-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition">+ Tạo Tài Khoản Mới</button>
-                    </form>
-                </div>
-
-                <!-- BẢNG DANH SÁCH THÀNH VIÊN -->
-                <div class="bg-white rounded-xl shadow p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-lg font-bold text-slate-700">Danh Sách Thành Viên & Điểm Số</h2>
-                        <span id="total-members-count" class="text-sm bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-medium">Tổng số: 0 người</span>
+                        <!-- Form đổi mật khẩu cho user thường -->
+                        <div class="bg-white rounded-xl shadow p-6 border border-slate-200">
+                            <h3 class="text-md font-bold text-slate-700 mb-3">🔒 Đổi Mật Khẩu Cá Nhân</h3>
+                            <form id="change-password-form" class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 mb-1">Mật khẩu cũ:</label>
+                                    <input type="password" id="old-password" required class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 mb-1">Mật khẩu mới:</label>
+                                    <input type="password" id="new-password-user" required class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                                <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg text-xs font-semibold hover:bg-indigo-700 transition">Cập nhật mật khẩu</button>
+                            </form>
+                        </div>
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="border-b border-slate-200 text-slate-500 text-sm">
-                                    <th class="py-3 px-4">Họ và Tên</th>
-                                    <th class="py-3 px-4">Tài khoản</th>
-                                    <th class="py-3 px-4 text-center">Điểm Hiện Tại</th>
-                                    <th class="py-3 px-4 text-right">Hành Động</th>
-                                </tr>
-                            </thead>
-                            <tbody id="member-table-body" class="divide-y divide-slate-100 text-sm">
-                                <!-- Dữ liệu nạp tự động -->
-                            </tbody>
-                        </table>
+                    <!-- Cột 2 & 3: Lịch sử cộng/trừ điểm cá nhân -->
+                    <div class="md:col-span-2 bg-white rounded-xl shadow p-6 flex flex-col">
+                        <h3 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">📜 Lịch Sử Cộng/Trừ Điểm & Lý Do Của Bạn</h3>
+                        <div id="personal-history-container" class="overflow-y-auto max-h-[450px] space-y-3 pr-1 text-sm"></div>
+                    </div>
+                </div>
+
+                <!-- GIAO DIỆN QUẢN LÝ CỦA ADMIN -->
+                <div id="admin-panel" class="space-y-6 hidden">
+                    <div class="bg-white rounded-xl shadow p-6 border-2 border-indigo-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 id="form-title" class="text-lg font-bold text-slate-700">Thêm Tài Khoản Mới</h2>
+                            <button type="button" id="cancel-edit-btn" onclick="resetUserForm()" class="hidden text-xs bg-slate-200 text-slate-700 px-3 py-1 rounded-md hover:bg-slate-300">Hủy chỉnh sửa</button>
+                        </div>
+
+                        <form id="add-user-form" class="space-y-4">
+                            <input type="hidden" id="editing-user-id">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <input type="text" id="new-name" placeholder="Họ và tên" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <input type="text" id="new-username" placeholder="Tên đăng nhập" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <input type="text" id="new-password" placeholder="Mật khẩu" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            
+                            <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Phân quyền chi tiết:</label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" name="permission" value="xem_diem" checked class="rounded text-indigo-600 focus:ring-indigo-500"> Xem điểm số
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" name="permission" value="cong_tru_diem" class="rounded text-indigo-600 focus:ring-indigo-500"> Cộng/Trừ điểm thành viên
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" name="permission" value="quan_ly_user" class="rounded text-indigo-600 focus:ring-indigo-500"> Quản lý user (Thêm/Xóa)
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" name="permission" value="xem_nhat_ky" class="rounded text-indigo-600 focus:ring-indigo-500"> Xem trang lịch sử hệ thống
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button type="submit" id="form-submit-btn" class="w-full bg-emerald-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition">+ Tạo Tài Khoản Mới</button>
+                        </form>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-lg font-bold text-slate-700">Danh Sách Thành Viên & Điểm Số</h2>
+                            <span id="total-members-count" class="text-sm bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-medium">Tổng số: 0 người</span>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-200 text-slate-500 text-sm">
+                                        <th class="py-3 px-4">Họ và Tên</th>
+                                        <th class="py-3 px-4">Tài khoản</th>
+                                        <th class="py-3 px-4 text-center">Điểm Hiện Tại</th>
+                                        <th class="py-3 px-4 text-right">Hành Động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="member-table-body" class="divide-y divide-slate-100 text-sm"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- VIEW 2: TRANG LỊCH SỬ RIÊNG (NHẬT KÝ ĐIỂM & ĐĂNG NHẬP) -->
-            <div id="history-view" class="space-y-6 hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Nhật ký Cộng / Trừ điểm -->
-                    <div class="bg-white rounded-xl shadow p-6 flex flex-col">
-                        <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">📊 Nhật Ký Cộng / Trừ Điểm</h2>
-                        <div id="audit-log-container" class="overflow-y-auto max-h-[500px] space-y-3 pr-1 text-sm"></div>
-                    </div>
+            <!-- VIEW 2: NHẬT KÝ CỘNG/TRỪ ĐIỂM -->
+            <div id="audit-history-view" class="space-y-6 hidden">
+                <div class="bg-white rounded-xl shadow p-6 flex flex-col">
+                    <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">📊 Nhật Ký Cộng / Trừ Điểm Toàn Bộ</h2>
+                    <div id="audit-log-container" class="overflow-y-auto max-h-[600px] space-y-3 pr-1 text-sm"></div>
+                </div>
+            </div>
 
-                    <!-- Nhật ký Đăng nhập -->
-                    <div class="bg-white rounded-xl shadow p-6 flex flex-col">
-                        <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2 text-indigo-700">🔒 Nhật Ký Đăng Nhập Hệ Thống</h2>
-                        <div id="login-log-container" class="overflow-y-auto max-h-[500px] space-y-2 pr-1 text-xs"></div>
-                    </div>
+            <!-- VIEW 3: NHẬT KÝ THAY ĐỔI & BẢO MẬT -->
+            <div id="security-history-view" class="space-y-6 hidden">
+                <div class="bg-white rounded-xl shadow p-6 flex flex-col">
+                    <h2 class="text-lg font-bold text-slate-700 mb-2 flex items-center gap-2 text-amber-600">🛡️ Nhật Ký Thay Đổi Tài Khoản & Đổi Mật Khẩu</h2>
+                    <p class="text-xs text-slate-500 mb-4">Ghi lại toàn bộ hành động chỉnh sửa thông tin user, phân quyền hoặc tự đổi mật khẩu.</p>
+                    <div id="security-log-container" class="overflow-y-auto max-h-[600px] space-y-3 pr-1 text-sm"></div>
+                </div>
+            </div>
+
+            <!-- VIEW 4: NHẬT KÝ ĐĂNG NHẬP -->
+            <div id="login-history-view" class="space-y-6 hidden">
+                <div class="bg-white rounded-xl shadow p-6 flex flex-col">
+                    <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2 text-indigo-700">🔒 Nhật Ký Đăng Nhập Hệ Thống</h2>
+                    <div id="login-log-container" class="overflow-y-auto max-h-[600px] space-y-2 pr-1 text-sm"></div>
                 </div>
             </div>
 
@@ -175,6 +225,7 @@
                 localStorage.setItem('users', JSON.stringify(defaultUsers));
             }
             if (!localStorage.getItem('auditLogs')) localStorage.setItem('auditLogs', JSON.stringify([]));
+            if (!localStorage.getItem('securityLogs')) localStorage.setItem('securityLogs', JSON.stringify([]));
             if (!localStorage.getItem('loginLogs')) localStorage.setItem('loginLogs', JSON.stringify([]));
         }
 
@@ -182,6 +233,8 @@
         function saveUsers(users) { localStorage.setItem('users', JSON.stringify(users)); }
         function getAuditLogs() { return JSON.parse(localStorage.getItem('auditLogs')); }
         function saveAuditLogs(logs) { localStorage.setItem('auditLogs', JSON.stringify(logs)); }
+        function getSecurityLogs() { return JSON.parse(localStorage.getItem('securityLogs')); }
+        function saveSecurityLogs(logs) { localStorage.setItem('securityLogs', JSON.stringify(logs)); }
         function getLoginLogs() { return JSON.parse(localStorage.getItem('loginLogs')); }
         function saveLoginLogs(logs) { localStorage.setItem('loginLogs', JSON.stringify(logs)); }
 
@@ -198,28 +251,45 @@
             const mainApp = document.getElementById('main-app');
 
             if (currentUser) {
+                const allUsers = getUsers();
+                const latestUser = allUsers.find(u => u.id === currentUser.id);
+                if (latestUser) {
+                    currentUser = latestUser;
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                }
+
                 loginScreen.classList.add('hidden');
                 mainApp.classList.remove('hidden');
                 mainApp.classList.add('flex');
                 
                 document.getElementById('user-fullname').textContent = currentUser.name;
 
+                const navTabContainer = document.getElementById('nav-tab-container');
+                const adminPanel = document.getElementById('admin-panel');
+                const userPersonalPanel = document.getElementById('user-personal-panel');
+
+                if (hasPermission('quan_ly_user') || hasPermission('xem_nhat_ky')) {
+                    navTabContainer.classList.remove('hidden');
+                    navTabContainer.classList.add('flex');
+                } else {
+                    navTabContainer.classList.remove('flex');
+                    navTabContainer.classList.add('hidden');
+                }
+
                 if (hasPermission('quan_ly_user')) {
-                    document.getElementById('admin-panel').classList.remove('hidden');
+                    adminPanel.classList.remove('hidden');
                 } else {
-                    document.getElementById('admin-panel').classList.add('hidden');
+                    adminPanel.classList.add('hidden');
                 }
 
-                // Ẩn/hiện tab lịch sử nếu không có quyền xem nhật ký
-                const btnTabHistory = document.getElementById('btn-tab-history');
-                if (hasPermission('xem_nhat_ky')) {
-                    btnTabHistory.style.display = 'block';
+                if (!hasPermission('quan_ly_user')) {
+                    userPersonalPanel.classList.remove('hidden');
+                    renderPersonalDashboard();
                 } else {
-                    btnTabHistory.style.display = 'none';
-                    switchTab('manage-view'); // Đưa về trang chính nếu đang ở trang lịch sử bị mất quyền
+                    userPersonalPanel.classList.add('hidden');
+                    renderDashboard();
                 }
 
-                renderDashboard();
             } else {
                 loginScreen.classList.remove('hidden');
                 mainApp.classList.add('hidden');
@@ -227,32 +297,112 @@
             }
         }
 
-        // Chuyển đổi qua lại giữa các view (Trang chính & Trang lịch sử riêng)
-        function switchTab(viewId) {
-            const manageView = document.getElementById('manage-view');
-            const historyView = document.getElementById('history-view');
-            const btnManage = document.getElementById('btn-tab-manage');
-            const btnHistory = document.getElementById('btn-tab-history');
+        function renderPersonalDashboard() {
+            document.getElementById('personal-score').textContent = currentUser.score;
+            const auditLogs = getAuditLogs();
+            const personalContainer = document.getElementById('personal-history-container');
+            personalContainer.innerHTML = '';
 
-            if (viewId === 'manage-view') {
-                manageView.classList.remove('hidden');
-                historyView.classList.add('hidden');
-                btnManage.className = "py-3 px-4 font-semibold text-sm border-b-2 border-indigo-600 text-indigo-600 transition";
-                btnHistory.className = "py-3 px-4 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition";
+            const myLogs = auditLogs.filter(log => log.targetName === currentUser.name);
+
+            if (myLogs.length === 0) {
+                personalContainer.innerHTML = `<p class="text-slate-400 text-xs italic text-center py-4">Bạn chưa có lịch sử cộng/trừ điểm nào.</p>`;
             } else {
-                if (!hasPermission('xem_nhat_ky')) {
-                    alert('Bạn không có quyền xem trang lịch sử này!');
-                    return;
-                }
-                manageView.classList.add('hidden');
-                historyView.classList.remove('hidden');
-                btnHistory.className = "py-3 px-4 font-semibold text-sm border-b-2 border-indigo-600 text-indigo-600 transition";
-                btnManage.className = "py-3 px-4 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition";
-                renderHistoryLogs();
+                myLogs.slice().reverse().forEach(log => {
+                    const isPlus = log.type === 'plus';
+                    const item = document.createElement('div');
+                    item.className = `bg-slate-50 border-l-4 ${isPlus ? 'border-emerald-500' : 'border-red-500'} border border-slate-200 rounded-lg p-3 space-y-1 text-sm`;
+                    item.innerHTML = `
+                        <div class="flex justify-between font-semibold text-slate-700">
+                            <span>${isPlus ? 'Được cộng điểm' : 'Bị trừ điểm'}: <strong class="${isPlus ? 'text-emerald-600' : 'text-red-600'}">${isPlus ? '+' : '-'}${log.points}đ</strong></span>
+                            <span class="text-slate-400 font-normal text-xs">${log.time}</span>
+                        </div>
+                        <p class="text-slate-600"><strong>Lý do:</strong> ${log.reason}</p>
+                        <p class="text-indigo-600 font-medium text-xs"><strong>Người thực hiện:</strong> ${log.performedBy}</p>
+                    `;
+                    personalContainer.appendChild(item);
+                });
             }
         }
 
-        // Đăng nhập
+        // Xử lý User thường đổi mật khẩu
+        document.getElementById('change-password-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const oldPass = document.getElementById('old-password').value.trim();
+            const newPass = document.getElementById('new-password-user').value.trim();
+
+            let users = getUsers();
+            let userIndex = users.findIndex(u => u.id === currentUser.id);
+
+            if (userIndex !== -1) {
+                if (users[userIndex].password !== oldPass) {
+                    alert('Mật khẩu cũ không chính xác!');
+                    return;
+                }
+
+                users[userIndex].password = newPass;
+                saveUsers(users);
+                currentUser = users[userIndex];
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+                // Ghi nhật ký bảo mật
+                let securityLogs = getSecurityLogs();
+                const now = new Date();
+                securityLogs.push({
+                    action: 'Đổi mật khẩu cá nhân',
+                    targetName: currentUser.name,
+                    performedBy: currentUser.name + ' (Tự đổi)',
+                    time: now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN')
+                });
+                saveSecurityLogs(securityLogs);
+
+                alert('Đổi mật khẩu thành công!');
+                document.getElementById('change-password-form').reset();
+            }
+        });
+
+        function switchTab(viewId) {
+            const manageView = document.getElementById('manage-view');
+            const auditHistoryView = document.getElementById('audit-history-view');
+            const securityHistoryView = document.getElementById('security-history-view');
+            const loginHistoryView = document.getElementById('login-history-view');
+
+            const btnManage = document.getElementById('btn-tab-manage');
+            const btnAudit = document.getElementById('btn-tab-audit');
+            const btnSecurity = document.getElementById('btn-tab-security');
+            const btnLogin = document.getElementById('btn-tab-login');
+
+            manageView.classList.add('hidden');
+            auditHistoryView.classList.add('hidden');
+            securityHistoryView.classList.add('hidden');
+            loginHistoryView.classList.add('hidden');
+
+            const inactiveClass = "py-3 px-4 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition whitespace-nowrap";
+            const activeClass = "py-3 px-4 font-semibold text-sm border-b-2 border-indigo-600 text-indigo-600 transition whitespace-nowrap";
+
+            btnManage.className = inactiveClass;
+            btnAudit.className = inactiveClass;
+            btnSecurity.className = inactiveClass;
+            btnLogin.className = inactiveClass;
+
+            if (viewId === 'manage-view') {
+                manageView.classList.remove('hidden');
+                btnManage.className = activeClass;
+            } else if (viewId === 'audit-history-view') {
+                auditHistoryView.classList.remove('hidden');
+                btnAudit.className = activeClass;
+                renderAuditLogs();
+            } else if (viewId === 'security-history-view') {
+                securityHistoryView.classList.remove('hidden');
+                btnSecurity.className = activeClass;
+                renderSecurityLogs();
+            } else if (viewId === 'login-history-view') {
+                loginHistoryView.classList.remove('hidden');
+                btnLogin.className = activeClass;
+                renderLoginLogs();
+            }
+        }
+
         document.getElementById('login-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const u = document.getElementById('login-username').value.trim();
@@ -286,9 +436,10 @@
             checkAuthState();
         }
 
-        // Tạo user mới
+        // Xử lý Form Tạo hoặc Cập nhật Tài Khoản (Admin)
         document.getElementById('add-user-form').addEventListener('submit', (e) => {
             e.preventDefault();
+            const editingId = document.getElementById('editing-user-id').value;
             const name = document.getElementById('new-name').value.trim();
             const username = document.getElementById('new-username').value.trim();
             const password = document.getElementById('new-password').value.trim();
@@ -297,26 +448,103 @@
             const permissions = Array.from(checkboxes).map(cb => cb.value);
 
             let users = getUsers();
-            if (users.some(u => u.username === username)) {
-                alert('Tên đăng nhập đã tồn tại!');
-                return;
-            }
+            let securityLogs = getSecurityLogs();
+            const now = new Date();
 
-            users.push({
-                id: Date.now(),
-                name,
-                username,
-                password,
-                permissions,
-                score: 100
+            if (editingId) {
+                let userIndex = users.findIndex(u => u.id == editingId);
+                if (userIndex !== -1) {
+                    if (users.some(u => u.username === username && u.id != editingId)) {
+                        alert('Tên đăng nhập này đã tồn tại ở tài khoản khác!');
+                        return;
+                    }
+                    users[userIndex].name = name;
+                    users[userIndex].username = username;
+                    users[userIndex].password = password;
+                    users[userIndex].permissions = permissions;
+
+                    saveUsers(users);
+
+                    securityLogs.push({
+                        action: 'Chỉnh sửa thông tin/phân quyền tài khoản',
+                        targetName: name,
+                        performedBy: currentUser.name,
+                        time: now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN')
+                    });
+                    saveSecurityLogs(securityLogs);
+
+                    alert('Cập nhật tài khoản thành công!');
+                    resetUserForm();
+                    renderDashboard();
+                }
+            } else {
+                if (users.some(u => u.username === username)) {
+                    alert('Tên đăng nhập đã tồn tại!');
+                    return;
+                }
+
+                users.push({
+                    id: Date.now(),
+                    name,
+                    username,
+                    password,
+                    permissions,
+                    score: 100
+                });
+
+                saveUsers(users);
+
+                securityLogs.push({
+                    action: 'Tạo tài khoản mới',
+                    targetName: name,
+                    performedBy: currentUser.name,
+                    time: now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN')
+                });
+                saveSecurityLogs(securityLogs);
+
+                resetUserForm();
+                renderDashboard();
+                alert('Tạo tài khoản và phân quyền thành công!');
+            }
+        });
+
+        function editUser(id) {
+            const users = getUsers();
+            const user = users.find(u => u.id === id);
+            if (!user) return;
+
+            document.getElementById('editing-user-id').value = user.id;
+            document.getElementById('new-name').value = user.name;
+            document.getElementById('new-username').value = user.username;
+            document.getElementById('new-password').value = user.password;
+
+            const checkboxes = document.querySelectorAll('input[name="permission"]');
+            checkboxes.forEach(cb => {
+                cb.checked = user.permissions && user.permissions.includes(cb.value);
             });
 
-            saveUsers(users);
+            document.getElementById('form-title').textContent = `Chỉnh Sửa Tài Khoản: ${user.name}`;
+            const submitBtn = document.getElementById('form-submit-btn');
+            submitBtn.textContent = 'Lưu Thay Đổi';
+            submitBtn.className = 'w-full bg-amber-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-amber-700 transition';
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetUserForm() {
             document.getElementById('add-user-form').reset();
-            document.querySelector('input[name="permission"][value="xem_diem"]').checked = true;
-            renderDashboard();
-            alert('Tạo tài khoản và phân quyền thành công!');
-        });
+            document.getElementById('editing-user-id').value = '';
+            document.getElementById('form-title').textContent = 'Thêm Tài Khoản Mới';
+            const submitBtn = document.getElementById('form-submit-btn');
+            submitBtn.textContent = '+ Tạo Tài Khoản Mới';
+            submitBtn.className = 'w-full bg-emerald-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition';
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+            
+            document.querySelectorAll('input[name="permission"]').forEach(cb => {
+                cb.checked = (cb.value === 'xem_diem');
+            });
+        }
 
         function deleteUser(id) {
             if (confirm('Bạn có chắc chắn muốn xóa thành viên này?')) {
@@ -341,11 +569,14 @@
                 if (hasPermission('cong_tru_diem')) {
                     actionHtml += `
                         <button onclick="openPointModal(${u.id}, 'plus')" class="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-md text-xs font-semibold hover:bg-emerald-100 mr-1">+ Cộng</button>
-                        <button onclick="openPointModal(${u.id}, 'minus')" class="bg-red-50 text-red-600 px-3 py-1 rounded-md text-xs font-semibold hover:bg-red-100 mr-2">- Trừ</button>
+                        <button onclick="openPointModal(${u.id}, 'minus')" class="bg-red-50 text-red-600 px-3 py-1 rounded-md text-xs font-semibold hover:bg-red-100 mr-1">- Trừ</button>
                     `;
                 }
                 if (hasPermission('quan_ly_user')) {
-                    actionHtml += `<button onclick="deleteUser(${u.id})" class="bg-slate-200 text-slate-700 px-2 py-1 rounded-md text-xs hover:bg-slate-300">Xóa</button>`;
+                    actionHtml += `
+                        <button onclick="editUser(${u.id})" class="bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-md text-xs font-semibold hover:bg-indigo-100 mr-1">Sửa</button>
+                        <button onclick="deleteUser(${u.id})" class="bg-slate-200 text-slate-700 px-2 py-1 rounded-md text-xs hover:bg-slate-300">Xóa</button>
+                    `;
                 }
 
                 tr.innerHTML = `
@@ -358,12 +589,8 @@
             });
         }
 
-        // Render trang lịch sử riêng
-        function renderHistoryLogs() {
+        function renderAuditLogs() {
             const auditLogs = getAuditLogs();
-            const loginLogs = getLoginLogs();
-
-            // Nhật ký điểm (cộng / trừ)
             const auditContainer = document.getElementById('audit-log-container');
             auditContainer.innerHTML = '';
             if (auditLogs.length === 0) {
@@ -385,8 +612,33 @@
                     auditContainer.appendChild(item);
                 });
             }
+        }
 
-            // Nhật ký đăng nhập
+        function renderSecurityLogs() {
+            const securityLogs = getSecurityLogs();
+            const securityContainer = document.getElementById('security-log-container');
+            securityContainer.innerHTML = '';
+            if (securityLogs.length === 0) {
+                securityContainer.innerHTML = `<p class="text-slate-400 text-xs italic text-center py-4">Chưa có nhật ký thay đổi tài khoản hoặc đổi mật khẩu nào.</p>`;
+            } else {
+                securityLogs.slice().reverse().forEach(log => {
+                    const item = document.createElement('div');
+                    item.className = 'bg-amber-50/50 border-l-4 border-amber-500 border border-amber-100 rounded-lg p-3 space-y-1 text-sm';
+                    item.innerHTML = `
+                        <div class="flex justify-between font-semibold text-slate-700">
+                            <span>Hành động: <strong class="text-amber-700">${log.action}</strong></span>
+                            <span class="text-slate-400 font-normal text-xs">${log.time}</span>
+                        </div>
+                        <p class="text-slate-600"><strong>Tài khoản tác động:</strong> ${log.targetName}</p>
+                        <p class="text-indigo-600 font-medium text-xs"><strong>Thực hiện bởi:</strong> ${log.performedBy}</p>
+                    `;
+                    securityContainer.appendChild(item);
+                });
+            }
+        }
+
+        function renderLoginLogs() {
+            const loginLogs = getLoginLogs();
             const loginContainer = document.getElementById('login-log-container');
             loginContainer.innerHTML = '';
             if (loginLogs.length === 0) {
@@ -394,17 +646,16 @@
             } else {
                 loginLogs.slice().reverse().forEach(l => {
                     const lItem = document.createElement('div');
-                    lItem.className = 'bg-indigo-50/50 border border-indigo-100 rounded p-2 flex justify-between items-center text-xs';
+                    lItem.className = 'bg-indigo-50/50 border border-indigo-100 rounded-lg p-3 flex justify-between items-center text-sm';
                     lItem.innerHTML = `
                         <div><span class="font-bold text-slate-700">${l.name}</span> (@${l.username}) đã đăng nhập</div>
-                        <span class="text-slate-400">${l.time}</span>
+                        <span class="text-slate-400 text-xs">${l.time}</span>
                     `;
                     loginContainer.appendChild(lItem);
                 });
             }
         }
 
-        // Modal Cộng / Trừ điểm
         function openPointModal(id, type) {
             const users = getUsers();
             const user = users.find(u => u.id === id);
@@ -466,7 +717,7 @@
                 closePointModal();
                 document.getElementById('point-form').reset();
                 renderDashboard();
-                alert(type === 'plus' ? 'Cộng điểm thành công!' : 'Trừ điểm thành công!');
+                alert(type === 'plus' ? 'Cộng điểm thành công!' : 'Trừ điểm thành viên thành công!');
             }
         });
 
