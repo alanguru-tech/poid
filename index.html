@@ -3,297 +3,475 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Quản Lý Điểm</title>
-    <style>
-        :root {
-            --primary-color: #4f46e5;
-            --primary-hover: #4338ca;
-            --success-color: #10b981;
-            --danger-color: #ef4444;
-            --bg-dark: #0f172a;
-            --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-secondary: #64748b;
-            --border-color: #cbd5e1;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
-        body { background-color: var(--bg-dark); color: var(--text-main); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-
-        .app-container { width: 100%; max-width: 950px; background: var(--card-bg); border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2); overflow: hidden; transition: all 0.3s ease; }
-
-        /* Màn hình Đăng nhập (Giữ nguyên phong cách thiết kế gốc) */
-        #login-screen { padding: 50px 40px; text-align: center; max-width: 480px; margin: 0 auto; }
-        .login-header h2 { font-size: 26px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
-        .login-header p { font-size: 14px; color: var(--text-secondary); margin-bottom: 30px; }
-        
-        .form-group { text-align: left; margin-bottom: 20px; }
-        .form-group label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px; letter-spacing: 0.5px; }
-        .form-control { width: 100%; padding: 14px 16px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 14px; outline: none; transition: all 0.2s; background: #f8fafc; }
-        .form-control:focus { border-color: var(--primary-color); background: #fff; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); }
-        
-        .btn { width: 100%; padding: 14px; background: var(--primary-color); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.1s; }
-        .btn:hover { background: var(--primary-hover); }
-        .btn:active { transform: scale(0.98); }
-
-        /* Màn hình chính sau khi đăng nhập */
-        #app-screen { display: none; padding: 35px; }
-        .dashboard-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 25px; }
-        .dashboard-header h1 { font-size: 22px; color: var(--text-main); font-weight: 700; }
-        
-        .btn-logout { background: #f1f5f9; color: var(--text-secondary); width: auto; padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 8px; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.2s; }
-        .btn-logout:hover { background: #e2e8f0; color: var(--text-main); }
-
-        /* Thanh điều hướng Tab */
-        .nav-tabs { display: flex; gap: 12px; margin-bottom: 25px; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; }
-        .tab-btn { background: #f8fafc; border: 1px solid #e2e8f0; font-size: 14px; font-weight: 600; color: var(--text-secondary); cursor: pointer; padding: 10px 20px; border-radius: 8px; transition: all 0.2s; }
-        .tab-btn.active { background: #e0e7ff; color: var(--primary-color); border-color: #c7d2fe; }
-
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        /* Khung nội dung chức năng */
-        .card-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
-        .card-box h3 { font-size: 16px; color: var(--text-main); margin-bottom: 18px; font-weight: 600; }
-        
-        .grid-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-        @media(max-width: 600px) { .grid-row { grid-template-columns: 1fr; } }
-
-        .action-buttons { display: flex; gap: 12px; margin-top: 15px; }
-        .btn-plus { background: var(--success-color); }
-        .btn-plus:hover { background: #059669; }
-        .btn-minus { background: var(--danger-color); }
-        .btn-minus:hover { background: #dc2626; }
-
-        /* Khu vực Lịch sử */
-        .history-section-title { font-size: 15px; font-weight: 700; color: var(--text-main); margin: 20px 0 12px 0; display: flex; align-items: center; gap: 8px; }
-        .history-card { background: white; border: 1px solid #e2e8f0; border-left: 4px solid var(--primary-color); border-radius: 8px; padding: 14px 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-        .history-card.plus { border-left-color: var(--success-color); }
-        .history-card.minus { border-left-color: var(--danger-color); }
-        
-        .history-details p { font-size: 14px; color: var(--text-main); margin-bottom: 4px; }
-        .history-details span { font-size: 12px; color: var(--text-secondary); }
-        .history-timestamp { font-size: 12px; color: #94a3b8; text-align: right; font-weight: 500; }
-        
-        .empty-text { color: var(--text-secondary); font-size: 14px; font-style: italic; padding: 10px 0; }
-    </style>
+    <title>Hệ Thống Quản Lý Điểm - Phân Quyền Chi Tiết</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col justify-between">
 
-    <div class="app-container">
-        <!-- MÀN HÌNH ĐĂNG NHẬP (Đã bỏ hoàn toàn khung gợi ý tài khoản) -->
-        <div id="login-screen">
-            <div class="login-header">
-                <h2>Đăng Nhập Hệ Thống</h2>
-                <p>Sử dụng tài khoản được cấp để truy cập</p>
+    <!-- ================= GIAO DIỆN ĐĂNG NHẬP ================= -->
+    <div id="login-screen" class="fixed inset-0 bg-slate-900 flex items-center justify-center p-4 z-55">
+        <div class="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-800">Đăng Nhập Hệ Thống</h2>
+                <p class="text-xs text-slate-500 mt-1">Sử dụng tài khoản được cấp để truy cập</p>
             </div>
-            <div class="form-group">
-                <label>TÊN ĐĂNG NHẬP:</label>
-                <input type="text" id="username" class="form-control" placeholder="Nhập tên đăng nhập...">
-            </div>
-            <div class="form-group">
-                <label>MẬT KHẨU:</label>
-                <input type="password" id="password" class="form-control" placeholder="Nhập mật khẩu...">
-            </div>
-            <button class="btn" onclick="handleLogin()">Đăng Nhập</button>
-        </div>
-
-        <!-- MÀN HÌNH QUẢN TRỊ CHÍNH -->
-        <div id="app-screen">
-            <div class="dashboard-header">
-                <h1 id="welcome-text">Xin chào, Quản Trị Viên</h1>
-                <button class="btn-logout" onclick="handleLogout()">Đăng Xuất</button>
-            </div>
-
-            <!-- Thanh chuyển tab chức năng -->
-            <div class="nav-tabs">
-                <button class="tab-btn active" onclick="switchTab('tab-manage', this)">Quản Lý Điểm</button>
-                <button class="tab-btn" onclick="switchTab('tab-history', this)">Lịch Sử Hoạt Động</button>
-            </div>
-
-            <!-- Tab 1: Quản lý điểm (Cộng / Trừ) -->
-            <div id="tab-manage" class="tab-content active">
-                <div class="card-box">
-                    <h3>Thực Hiện Cộng / Trừ Điểm Học Sinh</h3>
-                    <div class="form-group">
-                        <label>HỌ VÀ TÊN HỌC SINH:</label>
-                        <input type="text" id="student-name" class="form-control" placeholder="Nhập họ tên học sinh...">
-                    </div>
-                    <div class="grid-row">
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label>SỐ ĐIỂM:</label>
-                            <input type="number" id="point-value" class="form-control" placeholder="Ví dụ: 10" min="1">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label>LÝ DO:</label>
-                            <input type="text" id="point-reason" class="form-control" placeholder="Nhập lý do cộng/trừ điểm...">
-                        </div>
-                    </div>
-                    <div class="action-buttons">
-                        <button class="btn btn-plus" onclick="submitPointAction('plus')">Cộng Điểm</button>
-                        <button class="btn btn-minus" onclick="submitPointAction('minus')">Trừ Điểm</button>
-                    </div>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Tên đăng nhập:</label>
+                    <input type="text" id="login-username" required class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Nhập username...">
                 </div>
-            </div>
-
-            <!-- Tab 2: Lịch sử riêng (Lịch sử điểm & Lịch sử đăng nhập) -->
-            <div id="tab-history" class="tab-content">
-                <div class="card-box" style="background: white; border: none; padding: 0;">
-                    <div class="history-section-title">📊 Nhật Ký Cộng / Trừ Điểm</div>
-                    <div id="point-history-container">
-                        <p class="empty-text">Chưa có lịch sử cộng trừ điểm nào.</p>
-                    </div>
-
-                    <div class="history-section-title" style="margin-top: 30px;">🔒 Nhật Ký Đăng Nhập Hệ Thống</div>
-                    <div id="login-history-container">
-                        <p class="empty-text">Chưa có lịch sử đăng nhập.</p>
-                    </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Mật khẩu:</label>
+                    <input type="password" id="login-password" required class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Nhập mật khẩu...">
                 </div>
-            </div>
+                <button type="submit" class="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-semibold hover:bg-indigo-700 transition">Đăng Nhập</button>
+            </form>
         </div>
     </div>
 
+    <!-- ================= GIAO DIỆN CHÍNH ================= -->
+    <div id="main-app" class="hidden flex-col min-h-screen justify-between">
+        <header class="bg-indigo-600 text-white shadow-md">
+            <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <h1 class="text-xl font-bold">Hệ Thống Quản Lý Điểm Nội Bộ</h1>
+                    <p class="text-xs text-indigo-200">Xin chào, <span id="user-fullname" class="font-bold underline"></span></p>
+                </div>
+                <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-600 transition">Đăng Xuất</button>
+            </div>
+        </header>
+
+        <!-- THANH CHUYỂN TAB (TRANG CHÍNH & TRANG LỊCH SỬ RIÊNG) -->
+        <div class="bg-white border-b border-slate-200 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 flex gap-4">
+                <button onclick="switchTab('manage-view')" id="btn-tab-manage" class="py-3 px-4 font-semibold text-sm border-b-2 border-indigo-600 text-indigo-600 transition">Quản Lý Điểm & Thành Viên</button>
+                <button onclick="switchTab('history-view')" id="btn-tab-history" class="py-3 px-4 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition">Trang Lịch Sử Hoạt Động</button>
+            </div>
+        </div>
+
+        <main class="max-w-7xl mx-auto px-4 py-8 w-full flex-1">
+            
+            <!-- VIEW 1: QUẢN LÝ ĐIỂM & TÀI KHOẢN -->
+            <div id="manage-view" class="space-y-6">
+                <!-- KHU VỰC THÊM TÀI KHOẢN (CHỈ HIỆN KHI CÓ QUYỀN QUẢN LÝ USER) -->
+                <div id="admin-panel" class="bg-white rounded-xl shadow p-6 hidden">
+                    <h2 class="text-lg font-bold text-slate-700 mb-4">Quản Lý Tài Khoản & Phân Quyền</h2>
+                    <form id="add-user-form" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <input type="text" id="new-name" placeholder="Họ và tên" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <input type="text" id="new-username" placeholder="Tên đăng nhập" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <input type="password" id="new-password" placeholder="Mật khẩu" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Phân quyền chi tiết:</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" name="permission" value="xem_diem" checked class="rounded text-indigo-600 focus:ring-indigo-500"> Xem điểm số
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" name="permission" value="cong_tru_diem" class="rounded text-indigo-600 focus:ring-indigo-500"> Cộng/Trừ điểm thành viên
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" name="permission" value="quan_ly_user" class="rounded text-indigo-600 focus:ring-indigo-500"> Quản lý user (Thêm/Xóa)
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" name="permission" value="xem_nhat_ky" class="rounded text-indigo-600 focus:ring-indigo-500"> Xem trang lịch sử (Điểm & Đăng nhập)
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-emerald-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition">+ Tạo Tài Khoản Mới</button>
+                    </form>
+                </div>
+
+                <!-- BẢNG DANH SÁCH THÀNH VIÊN -->
+                <div class="bg-white rounded-xl shadow p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-lg font-bold text-slate-700">Danh Sách Thành Viên & Điểm Số</h2>
+                        <span id="total-members-count" class="text-sm bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-medium">Tổng số: 0 người</span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-200 text-slate-500 text-sm">
+                                    <th class="py-3 px-4">Họ và Tên</th>
+                                    <th class="py-3 px-4">Tài khoản</th>
+                                    <th class="py-3 px-4 text-center">Điểm Hiện Tại</th>
+                                    <th class="py-3 px-4 text-right">Hành Động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="member-table-body" class="divide-y divide-slate-100 text-sm">
+                                <!-- Dữ liệu nạp tự động -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 2: TRANG LỊCH SỬ RIÊNG (NHẬT KÝ ĐIỂM & ĐĂNG NHẬP) -->
+            <div id="history-view" class="space-y-6 hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Nhật ký Cộng / Trừ điểm -->
+                    <div class="bg-white rounded-xl shadow p-6 flex flex-col">
+                        <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">📊 Nhật Ký Cộng / Trừ Điểm</h2>
+                        <div id="audit-log-container" class="overflow-y-auto max-h-[500px] space-y-3 pr-1 text-sm"></div>
+                    </div>
+
+                    <!-- Nhật ký Đăng nhập -->
+                    <div class="bg-white rounded-xl shadow p-6 flex flex-col">
+                        <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2 text-indigo-700">🔒 Nhật Ký Đăng Nhập Hệ Thống</h2>
+                        <div id="login-log-container" class="overflow-y-auto max-h-[500px] space-y-2 pr-1 text-xs"></div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+            Hệ thống quản lý phân quyền điểm số - LocalStorage.
+        </footer>
+    </div>
+
+    <!-- MODAL CỘNG / TRỪ ĐIỂM -->
+    <div id="point-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+            <h3 id="modal-title" class="text-lg font-bold text-slate-800 mb-2">Cập nhật điểm thành viên</h3>
+            <p class="text-sm text-slate-500 mb-4">Thành viên: <span id="modal-target-name" class="font-bold text-slate-700"></span></p>
+            
+            <form id="point-form" class="space-y-4">
+                <input type="hidden" id="modal-action-type">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Số điểm:</label>
+                    <input type="number" id="modal-points" min="1" value="10" required class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Lý do:</label>
+                    <textarea id="modal-reason" rows="3" required placeholder="Nhập lý do chi tiết..." class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closePointModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300">Hủy</button>
+                    <button type="submit" id="modal-submit-btn" class="px-4 py-2 text-white rounded-lg text-sm font-medium">Xác nhận</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT XỬ LÝ LOGIC ================= -->
     <script>
-        // Kiểm tra xem đã đăng nhập từ trước hay chưa khi load trang
-        window.onload = function() {
-            const activeUser = localStorage.getItem('currentUser');
-            if (activeUser) {
-                showAppScreen(activeUser);
+        function initSystem() {
+            if (!localStorage.getItem('users')) {
+                const defaultUsers = [
+                    { 
+                        id: 1, 
+                        name: "Quản Trị Viên", 
+                        username: "admin", 
+                        password: "123", 
+                        permissions: ["xem_diem", "cong_tru_diem", "quan_ly_user", "xem_nhat_ky"], 
+                        score: 100 
+                    }
+                ];
+                localStorage.setItem('users', JSON.stringify(defaultUsers));
             }
-        };
-
-        // Xử lý sự kiện đăng nhập
-        function handleLogin() {
-            const user = document.getElementById('username').value.trim();
-            const pass = document.getElementById('password').value.trim();
-
-            if (!user || !pass) {
-                alert('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!');
-                return;
-            }
-
-            // Lưu lại nhật ký đăng nhập vào localStorage
-            saveLoginLog(user);
-
-            // Lưu phiên đăng nhập
-            localStorage.setItem('currentUser', user);
-            showAppScreen(user);
+            if (!localStorage.getItem('auditLogs')) localStorage.setItem('auditLogs', JSON.stringify([]));
+            if (!localStorage.getItem('loginLogs')) localStorage.setItem('loginLogs', JSON.stringify([]));
         }
 
-        function showAppScreen(username) {
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('app-screen').style.display = 'block';
-            document.getElementById('welcome-text').innerText = `Xin chào, ${username}`;
-            loadAndRenderHistories();
+        function getUsers() { return JSON.parse(localStorage.getItem('users')); }
+        function saveUsers(users) { localStorage.setItem('users', JSON.stringify(users)); }
+        function getAuditLogs() { return JSON.parse(localStorage.getItem('auditLogs')); }
+        function saveAuditLogs(logs) { localStorage.setItem('auditLogs', JSON.stringify(logs)); }
+        function getLoginLogs() { return JSON.parse(localStorage.getItem('loginLogs')); }
+        function saveLoginLogs(logs) { localStorage.setItem('loginLogs', JSON.stringify(logs)); }
+
+        let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+        let selectedUserId = null;
+
+        function hasPermission(perm) {
+            if (!currentUser) return false;
+            return currentUser.permissions && currentUser.permissions.includes(perm);
         }
 
-        // Đăng xuất khỏi hệ thống
-        function handleLogout() {
+        function checkAuthState() {
+            const loginScreen = document.getElementById('login-screen');
+            const mainApp = document.getElementById('main-app');
+
+            if (currentUser) {
+                loginScreen.classList.add('hidden');
+                mainApp.classList.remove('hidden');
+                mainApp.classList.add('flex');
+                
+                document.getElementById('user-fullname').textContent = currentUser.name;
+
+                if (hasPermission('quan_ly_user')) {
+                    document.getElementById('admin-panel').classList.remove('hidden');
+                } else {
+                    document.getElementById('admin-panel').classList.add('hidden');
+                }
+
+                // Ẩn/hiện tab lịch sử nếu không có quyền xem nhật ký
+                const btnTabHistory = document.getElementById('btn-tab-history');
+                if (hasPermission('xem_nhat_ky')) {
+                    btnTabHistory.style.display = 'block';
+                } else {
+                    btnTabHistory.style.display = 'none';
+                    switchTab('manage-view'); // Đưa về trang chính nếu đang ở trang lịch sử bị mất quyền
+                }
+
+                renderDashboard();
+            } else {
+                loginScreen.classList.remove('hidden');
+                mainApp.classList.add('hidden');
+                mainApp.classList.remove('flex');
+            }
+        }
+
+        // Chuyển đổi qua lại giữa các view (Trang chính & Trang lịch sử riêng)
+        function switchTab(viewId) {
+            const manageView = document.getElementById('manage-view');
+            const historyView = document.getElementById('history-view');
+            const btnManage = document.getElementById('btn-tab-manage');
+            const btnHistory = document.getElementById('btn-tab-history');
+
+            if (viewId === 'manage-view') {
+                manageView.classList.remove('hidden');
+                historyView.classList.add('hidden');
+                btnManage.className = "py-3 px-4 font-semibold text-sm border-b-2 border-indigo-600 text-indigo-600 transition";
+                btnHistory.className = "py-3 px-4 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition";
+            } else {
+                if (!hasPermission('xem_nhat_ky')) {
+                    alert('Bạn không có quyền xem trang lịch sử này!');
+                    return;
+                }
+                manageView.classList.add('hidden');
+                historyView.classList.remove('hidden');
+                btnHistory.className = "py-3 px-4 font-semibold text-sm border-b-2 border-indigo-600 text-indigo-600 transition";
+                btnManage.className = "py-3 px-4 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition";
+                renderHistoryLogs();
+            }
+        }
+
+        // Đăng nhập
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const u = document.getElementById('login-username').value.trim();
+            const p = document.getElementById('login-password').value.trim();
+
+            const users = getUsers();
+            const found = users.find(item => item.username === u && item.password === p);
+
+            if (found) {
+                currentUser = found;
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+                let loginLogs = getLoginLogs();
+                const now = new Date();
+                loginLogs.push({
+                    name: found.name,
+                    username: found.username,
+                    time: now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN')
+                });
+                saveLoginLogs(loginLogs);
+
+                checkAuthState();
+            } else {
+                alert('Sai tên đăng nhập hoặc mật khẩu!');
+            }
+        });
+
+        function logout() {
+            currentUser = null;
             localStorage.removeItem('currentUser');
-            location.reload();
+            checkAuthState();
         }
 
-        // Chuyển đổi giữa các tab giao diện
-        function switchTab(tabId, btnElement) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        // Tạo user mới
+        document.getElementById('add-user-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('new-name').value.trim();
+            const username = document.getElementById('new-username').value.trim();
+            const password = document.getElementById('new-password').value.trim();
 
-            document.getElementById(tabId).classList.add('active');
-            btnElement.classList.add('active');
-        }
+            const checkboxes = document.querySelectorAll('input[name="permission"]:checked');
+            const permissions = Array.from(checkboxes).map(cb => cb.value);
 
-        // Lưu lịch sử đăng nhập
-        function saveLoginLog(username) {
-            let logs = JSON.parse(localStorage.getItem('loginLogs')) || [];
-            const timeString = new Date().toLocaleString('vi-VN');
-            logs.unshift({ username, time: timeString });
-            localStorage.setItem('loginLogs', JSON.stringify(logs));
-        }
-
-        // Thực hiện thao tác Cộng hoặc Trừ điểm
-        function submitPointAction(actionType) {
-            const student = document.getElementById('student-name').value.trim();
-            const points = document.getElementById('point-value').value;
-            const reason = document.getElementById('point-reason').value.trim();
-            const currentUser = localStorage.getItem('currentUser') || 'Quản Trị Viên';
-
-            if (!student || !points || !reason) {
-                alert('Vui lòng điền đầy đủ thông tin học sinh, số điểm và lý do!');
+            let users = getUsers();
+            if (users.some(u => u.username === username)) {
+                alert('Tên đăng nhập đã tồn tại!');
                 return;
             }
 
-            let pointLogs = JSON.parse(localStorage.getItem('pointLogs')) || [];
-            const timeString = new Date().toLocaleString('vi-VN');
-
-            pointLogs.unshift({
-                type: actionType, // 'plus' hoặc 'minus'
-                student: student,
-                points: points,
-                reason: reason,
-                author: currentUser,
-                time: timeString
+            users.push({
+                id: Date.now(),
+                name,
+                username,
+                password,
+                permissions,
+                score: 100
             });
 
-            localStorage.setItem('pointLogs', JSON.stringify(pointLogs));
+            saveUsers(users);
+            document.getElementById('add-user-form').reset();
+            document.querySelector('input[name="permission"][value="xem_diem"]').checked = true;
+            renderDashboard();
+            alert('Tạo tài khoản và phân quyền thành công!');
+        });
 
-            // Xóa sạch form sau khi nhập thành công
-            document.getElementById('student-name').value = '';
-            document.getElementById('point-value').value = '';
-            document.getElementById('point-reason').value = '';
-
-            alert(actionType === 'plus' ? 'Cộng điểm cho học sinh thành công!' : 'Trừ điểm học sinh thành công!');
-            loadAndRenderHistories();
+        function deleteUser(id) {
+            if (confirm('Bạn có chắc chắn muốn xóa thành viên này?')) {
+                let users = getUsers();
+                users = users.filter(u => u.id !== id);
+                saveUsers(users);
+                renderDashboard();
+            }
         }
 
-        // Tải và hiển thị danh sách lịch sử ra giao diện
-        function loadAndRenderHistories() {
-            // 1. Render lịch sử cộng trừ điểm
-            const pointLogs = JSON.parse(localStorage.getItem('pointLogs')) || [];
-            const pointContainer = document.getElementById('point-history-container');
+        function renderDashboard() {
+            const users = getUsers();
+            document.getElementById('total-members-count').textContent = `Tổng số: ${users.length} người`;
 
-            if (pointLogs.length === 0) {
-                pointContainer.innerHTML = '<p class="empty-text">Chưa có lịch sử cộng trừ điểm nào.</p>';
-            } else {
-                let htmlContent = '';
-                pointLogs.forEach(item => {
-                    const isPlus = item.type === 'plus';
-                    const sign = isPlus ? '+' : '-';
-                    const colorStyle = isPlus ? 'color: var(--success-color); font-weight: bold;' : 'color: var(--danger-color); font-weight: bold;';
-                    
-                    htmlContent += `
-                        <div class="history-card ${isPlus ? 'plus' : 'minus'}">
-                            <div class="history-details">
-                                <p><strong>${isPlus ? 'Cộng điểm' : 'Trừ điểm'}:</strong> <span style="${colorStyle}">${sign}${item.points}đ</span> cho học sinh: <strong>${item.student}</strong></p>
-                                <p><span>Lý do: ${item.reason}</span> | <span style="color: var(--primary-color);">Thực hiện bởi: ${item.author}</span></p>
-                            </div>
-                            <div class="history-timestamp">${item.time}</div>
-                        </div>
+            const tableBody = document.getElementById('member-table-body');
+            tableBody.innerHTML = '';
+            users.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+
+                let actionHtml = '';
+                if (hasPermission('cong_tru_diem')) {
+                    actionHtml += `
+                        <button onclick="openPointModal(${u.id}, 'plus')" class="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-md text-xs font-semibold hover:bg-emerald-100 mr-1">+ Cộng</button>
+                        <button onclick="openPointModal(${u.id}, 'minus')" class="bg-red-50 text-red-600 px-3 py-1 rounded-md text-xs font-semibold hover:bg-red-100 mr-2">- Trừ</button>
                     `;
+                }
+                if (hasPermission('quan_ly_user')) {
+                    actionHtml += `<button onclick="deleteUser(${u.id})" class="bg-slate-200 text-slate-700 px-2 py-1 rounded-md text-xs hover:bg-slate-300">Xóa</button>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-medium text-slate-800">${u.name}</td>
+                    <td class="py-3 px-4 text-slate-500 font-mono text-xs">${u.username}</td>
+                    <td class="py-3 px-4 text-center font-bold text-indigo-600">${u.score}</td>
+                    <td class="py-3 px-4 text-right">${actionHtml || '<span class="text-slate-400 italic text-xs">Chỉ xem</span>'}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // Render trang lịch sử riêng
+        function renderHistoryLogs() {
+            const auditLogs = getAuditLogs();
+            const loginLogs = getLoginLogs();
+
+            // Nhật ký điểm (cộng / trừ)
+            const auditContainer = document.getElementById('audit-log-container');
+            auditContainer.innerHTML = '';
+            if (auditLogs.length === 0) {
+                auditContainer.innerHTML = `<p class="text-slate-400 text-xs italic text-center py-4">Chưa có lịch sử cộng trừ điểm.</p>`;
+            } else {
+                auditLogs.slice().reverse().forEach(log => {
+                    const isPlus = log.type === 'plus';
+                    const item = document.createElement('div');
+                    item.className = `bg-slate-50 border-l-4 ${isPlus ? 'border-emerald-500' : 'border-red-500'} border border-slate-200 rounded-lg p-3 space-y-1 text-sm`;
+                    item.innerHTML = `
+                        <div class="flex justify-between font-semibold text-slate-700">
+                            <span>${isPlus ? 'Cộng điểm' : 'Trừ điểm'}: <strong class="${isPlus ? 'text-emerald-600' : 'text-red-600'}">${isPlus ? '+' : '-'}${log.points}đ</strong></span>
+                            <span class="text-slate-400 font-normal text-xs">${log.time}</span>
+                        </div>
+                        <p class="text-slate-600"><strong>Thành viên:</strong> ${log.targetName}</p>
+                        <p class="text-slate-600"><strong>Lý do:</strong> ${log.reason}</p>
+                        <p class="text-indigo-600 font-medium text-xs"><strong>Thực hiện bởi:</strong> ${log.performedBy}</p>
+                    `;
+                    auditContainer.appendChild(item);
                 });
-                pointContainer.innerHTML = htmlContent;
             }
 
-            // 2. Render lịch sử đăng nhập
-            const loginLogs = JSON.parse(localStorage.getItem('loginLogs')) || [];
-            const loginContainer = document.getElementById('login-history-container');
-
+            // Nhật ký đăng nhập
+            const loginContainer = document.getElementById('login-log-container');
+            loginContainer.innerHTML = '';
             if (loginLogs.length === 0) {
-                loginContainer.innerHTML = '<p class="empty-text">Chưa có lịch sử đăng nhập.</p>';
+                loginContainer.innerHTML = `<p class="text-slate-400 text-xs italic text-center py-2">Chưa có lịch sử đăng nhập.</p>`;
             } else {
-                let loginHtml = '';
-                loginLogs.forEach(item => {
-                    loginHtml += `
-                        <div class="history-card">
-                            <div class="history-details">
-                                <p>Tài khoản quản trị <strong>@${item.username}</strong> đã đăng nhập vào hệ thống.</p>
-                            </div>
-                            <div class="history-timestamp">${item.time}</div>
-                        </div>
+                loginLogs.slice().reverse().forEach(l => {
+                    const lItem = document.createElement('div');
+                    lItem.className = 'bg-indigo-50/50 border border-indigo-100 rounded p-2 flex justify-between items-center text-xs';
+                    lItem.innerHTML = `
+                        <div><span class="font-bold text-slate-700">${l.name}</span> (@${l.username}) đã đăng nhập</div>
+                        <span class="text-slate-400">${l.time}</span>
                     `;
+                    loginContainer.appendChild(lItem);
                 });
-                loginContainer.innerHTML = loginHtml;
             }
         }
+
+        // Modal Cộng / Trừ điểm
+        function openPointModal(id, type) {
+            const users = getUsers();
+            const user = users.find(u => u.id === id);
+            if (!user) return;
+
+            selectedUserId = id;
+            document.getElementById('modal-target-name').textContent = user.name;
+            document.getElementById('modal-action-type').value = type;
+
+            const titleEl = document.getElementById('modal-title');
+            const submitBtn = document.getElementById('modal-submit-btn');
+
+            if (type === 'plus') {
+                titleEl.textContent = 'Cộng điểm thành viên';
+                submitBtn.className = 'px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700';
+                submitBtn.textContent = 'Xác nhận cộng';
+            } else {
+                titleEl.textContent = 'Trừ điểm thành viên';
+                submitBtn.className = 'px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700';
+                submitBtn.textContent = 'Xác nhận trừ';
+            }
+
+            document.getElementById('point-modal').classList.remove('hidden');
+        }
+
+        function closePointModal() {
+            document.getElementById('point-modal').classList.add('hidden');
+        }
+
+        document.getElementById('point-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const type = document.getElementById('modal-action-type').value;
+            const points = parseInt(document.getElementById('modal-points').value);
+            const reason = document.getElementById('modal-reason').value.trim();
+
+            let users = getUsers();
+            let target = users.find(u => u.id === selectedUserId);
+
+            if (target) {
+                if (type === 'plus') {
+                    target.score += points;
+                } else {
+                    target.score -= points;
+                }
+                saveUsers(users);
+
+                let auditLogs = getAuditLogs();
+                const now = new Date();
+                auditLogs.push({
+                    type: type,
+                    targetName: target.name,
+                    points: points,
+                    reason: reason,
+                    performedBy: currentUser.name,
+                    time: now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN')
+                });
+                saveAuditLogs(auditLogs);
+
+                closePointModal();
+                document.getElementById('point-form').reset();
+                renderDashboard();
+                alert(type === 'plus' ? 'Cộng điểm thành công!' : 'Trừ điểm thành công!');
+            }
+        });
+
+        initSystem();
+        checkAuthState();
     </script>
 </body>
 </html>
