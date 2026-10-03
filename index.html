@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ Thống Quản Lý Điểm - Phân Quyền Chi Tiết</title>
+    <!-- Thêm Icon cho tab trình duyệt -->
+    <link rel="icon" type="image/png" href="icon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col justify-between">
 
     <!-- ================= GIAO DIỆN ĐĂNG NHẬP ================= -->
-    <div id="login-screen" class="fixed inset-0 bg-slate-900 flex items-center justify-center p-4 z-55">
+    <div id="login-screen" class="fixed inset-0 bg-slate-900 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl">
             <div class="text-center mb-6">
                 <h2 class="text-2xl font-bold text-slate-800">Đăng Nhập Hệ Thống</h2>
@@ -57,7 +59,6 @@
             <div id="manage-view" class="space-y-6">
                 <!-- GIAO DIỆN CÁ NHÂN CHO USER THƯỜNG -->
                 <div id="user-personal-panel" class="grid grid-cols-1 md:grid-cols-3 gap-6 hidden">
-                    <!-- Cột 1: Điểm số & Đổi mật khẩu -->
                     <div class="space-y-6">
                         <div class="bg-white rounded-xl shadow p-6 flex flex-col justify-between border-l-4 border-indigo-600">
                             <div>
@@ -67,7 +68,6 @@
                             <p class="text-xs text-slate-500">Hãy cố gắng tích lũy thêm điểm thật tốt nhé!</p>
                         </div>
 
-                        <!-- Form đổi mật khẩu cho user thường -->
                         <div class="bg-white rounded-xl shadow p-6 border border-slate-200">
                             <h3 class="text-md font-bold text-slate-700 mb-3">🔒 Đổi Mật Khẩu Cá Nhân</h3>
                             <form id="change-password-form" class="space-y-3">
@@ -84,7 +84,6 @@
                         </div>
                     </div>
 
-                    <!-- Cột 2 & 3: Lịch sử cộng/trừ điểm cá nhân -->
                     <div class="md:col-span-2 bg-white rounded-xl shadow p-6 flex flex-col">
                         <h3 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">📜 Lịch Sử Cộng/Trừ Điểm & Lý Do Của Bạn</h3>
                         <div id="personal-history-container" class="overflow-y-auto max-h-[450px] space-y-3 pr-1 text-sm"></div>
@@ -325,7 +324,6 @@
             }
         }
 
-        // Xử lý User thường đổi mật khẩu
         document.getElementById('change-password-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const oldPass = document.getElementById('old-password').value.trim();
@@ -345,7 +343,6 @@
                 currentUser = users[userIndex];
                 localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
-                // Ghi nhật ký bảo mật
                 let securityLogs = getSecurityLogs();
                 const now = new Date();
                 securityLogs.push({
@@ -436,7 +433,6 @@
             checkAuthState();
         }
 
-        // Xử lý Form Tạo hoặc Cập nhật Tài Khoản (Admin)
         document.getElementById('add-user-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const editingId = document.getElementById('editing-user-id').value;
@@ -717,7 +713,7 @@
                 closePointModal();
                 document.getElementById('point-form').reset();
                 renderDashboard();
-                alert(type === 'plus' ? 'Cộng điểm thành công!' : 'Trừ điểm thành viên thành công!');
+                alert(type === 'plus' ? 'Cộng điểm thành viên thành công!' : 'Trừ điểm thành viên thành công!');
             }
         });
 
