@@ -63,7 +63,7 @@
                 <button onclick="switchTab('admin-gv-view')" id="btn-tab-admin-gv" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🛡 Quản Lý Danh Sách AD</button>
                 <button onclick="switchTab('audit-history-view')" id="btn-tab-audit" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">✒️ Nhật Ký Điểm</button>
                 <button onclick="switchTab('security-history-view')" id="btn-tab-security" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🛡 Nhật Ký Sửa Đổi</button>
-                <button onclick="switchTab('login-history-view')" id="btn-tab-login" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🗝️ Nhật Ký Đăng Nhập</button>
+                <button onclick="switchTab('login-history-view')" id="btn-tab-login" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🗝️️ Nhật Ký Đăng Nhập</button>
             </aside>
 
             <main class="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto">
@@ -537,9 +537,9 @@
             document.getElementById('change-password-form').reset();
         };
 
-        function hasPermission(perm) {
+        function canModifyPoints() {
             if (!currentUser) return false;
-            return currentUser.permissions && currentUser.permissions.includes(perm);
+            return currentUser.role === 'Admin' || currentUser.role === 'GV' || currentUser.role === 'BCS';
         }
 
         function checkAuthState() {
@@ -723,15 +723,10 @@
         });
 
         window.switchTab = function(viewId) {
-            if (viewId === 'admin-gv-view') {
+            // Chỉ Admin mới được mở các trang: Quản lý danh sách AD, Nhật ký điểm, Nhật ký sửa đổi, Nhật ký đăng nhập
+            if (viewId === 'admin-gv-view' || viewId === 'audit-history-view' || viewId === 'security-history-view' || viewId === 'login-history-view') {
                 if (!currentUser || currentUser.role !== 'Admin') {
                     showPermissionModal('Truy cập bị từ chối! Mục này chỉ dành riêng cho tài khoản có quyền Admin.');
-                    return;
-                }
-            }
-            if (viewId.includes('history-view')) {
-                if (!hasPermission('xem_nhat_ky') && currentUser.role !== 'Admin') {
-                    showPermissionModal('Bạn không đủ quyền hạn để xem nhật ký hệ thống!');
                     return;
                 }
             }
@@ -957,7 +952,6 @@
                     return;
                 }
                 
-                // Nếu đổi username, cần xóa doc cũ trên Firestore và tạo doc mới
                 const oldUsername = appUsers[userIndex].username;
                 if (oldUsername !== username) {
                     await deleteDoc(doc(db, "users", oldUsername));
@@ -1009,7 +1003,7 @@
 
             if (count > 0) {
                 if (currentUser.role === 'Admin') btnDel.classList.remove('hidden');
-                if (hasPermission('cong_tru_diem') || currentUser.role === 'Admin') btnEditScore.classList.remove('hidden');
+                if (canModifyPoints()) btnEditScore.classList.remove('hidden');
             } else {
                 btnDel.classList.add('hidden');
                 btnEditScore.classList.add('hidden');
@@ -1084,8 +1078,8 @@
         };
 
         window.promptBulkEditScore = function() {
-            if (!hasPermission('cong_tru_diem') && currentUser.role !== 'Admin') {
-                showPermissionModal('Bạn không có quyền sửa điểm!');
+            if (!canModifyPoints()) {
+                showPermissionModal('Chỉ có Admin, GV và BCS mới có quyền cộng trừ điểm!');
                 return;
             }
             const checkboxes = document.querySelectorAll('.user-checkbox:checked');
@@ -1101,6 +1095,10 @@
         };
 
         window.executeBulkEditScore = async function() {
+            if (!canModifyPoints()) {
+                showPermissionModal('Chỉ có Admin, GV và BCS mới có quyền cộng trừ điểm!');
+                return;
+            }
             const checkboxes = document.querySelectorAll('.user-checkbox:checked');
             const idsToEdit = Array.from(checkboxes).map(cb => cb.value);
             const actionType = document.getElementById('bulk-score-action').value;
@@ -1162,7 +1160,7 @@
                 tr.className = 'hover:bg-slate-50 transition';
 
                 let actionHtml = '';
-                if (hasPermission('cong_tru_diem') || currentUser.role === 'Admin') {
+                if (canModifyPoints()) {
                     actionHtml += `
                         <button onclick="openPointModal('${u.username}', 'plus')" class="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-md text-xs font-semibold hover:bg-emerald-100 mr-1">+ Cộng</button>
                         <button onclick="openPointModal('${u.username}', 'minus')" class="bg-red-50 text-red-600 px-3 py-1 rounded-md text-xs font-semibold hover:bg-red-100 mr-1">- Trừ</button>
@@ -1290,6 +1288,10 @@
         };
 
         window.openPointModal = function(username, type) {
+            if (!canModifyPoints()) {
+                showPermissionModal('Chỉ có Admin, GV và BCS mới có quyền cộng trừ điểm!');
+                return;
+            }
             const user = appUsers.find(u => u.username === username);
             if (!user) return;
 
@@ -1316,6 +1318,10 @@
 
         document.getElementById('point-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (!canModifyPoints()) {
+                showPermissionModal('Chỉ có Admin, GV và BCS mới có quyền cộng trừ điểm!');
+                return;
+            }
             const type = document.getElementById('modal-action-type').value;
             const points = parseInt(document.getElementById('modal-points').value);
             const reason = document.getElementById('modal-reason').value.trim();
