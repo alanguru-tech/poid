@@ -441,24 +441,35 @@
             .catch(() => { clientIP = "127.0.0.1 (Localhost)"; });
 
         function initSystem() {
-            if (!localStorage.getItem('users')) {
-                const defaultUsers = [
-                    { 
-                        id: 1, 
-                        name: "Quản Trị Viên", 
-                        username: "admin", 
-                        password: "123", 
-                        role: "Admin",
-                        permissions: ["xem_diem", "cong_tru_diem", "quan_ly_user", "xem_nhat_ky"], 
-                        score: 150 
-                    }
-                ];
-                localStorage.setItem('users', JSON.stringify(defaultUsers));
+        let users = JSON.parse(localStorage.getItem('users'));
+        
+        if (!users) {
+            const defaultUsers = [
+                { 
+                    id: 1, 
+                    name: "Quản Trị Viên", 
+                    username: "admin", 
+                    password: "123", 
+                    role: "Admin",
+                    permissions: ["xem_diem", "cong_tru_diem", "quan_ly_user", "xem_nhat_ky"], 
+                    score: 150 
+                }
+            ];
+            localStorage.setItem('users', JSON.stringify(defaultUsers));
+        } else {
+            // Kiểm tra nếu tài khoản admin tồn tại nhưng thiếu quyền, tự động bồi đắp đủ quyền
+            let adminUser = users.find(u => u.username === 'admin');
+            if (adminUser) {
+                adminUser.role = "Admin";
+                adminUser.permissions = ["xem_diem", "cong_tru_diem", "quan_ly_user", "xem_nhat_ky"];
+                localStorage.setItem('users', JSON.stringify(users));
             }
-            if (!localStorage.getItem('auditLogs')) localStorage.setItem('auditLogs', JSON.stringify([]));
-            if (!localStorage.getItem('securityLogs')) localStorage.setItem('securityLogs', JSON.stringify([]));
-            if (!localStorage.getItem('loginLogs')) localStorage.setItem('loginLogs', JSON.stringify([]));
         }
+
+        if (!localStorage.getItem('auditLogs')) localStorage.setItem('auditLogs', JSON.stringify([]));
+        if (!localStorage.getItem('securityLogs')) localStorage.setItem('securityLogs', JSON.stringify([]));
+        if (!localStorage.getItem('loginLogs')) localStorage.setItem('loginLogs', JSON.stringify([]));
+    }
 
         function getUsers() { return JSON.parse(localStorage.getItem('users')); }
         function saveUsers(users) { localStorage.setItem('users', JSON.stringify(users)); }
