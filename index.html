@@ -418,11 +418,11 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT TÍCH HỢP FIREBASE FIRESTORE (MODULE) -->
+    <!-- JAVASCRIPT TÍCH HỢP FIREBASE FIRESTORE (ĐỒNG BỘ 4 COLLECTION) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
-        import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAus1TXoMaJ3mJeAxV06c7lnX1USlFnnwk",
@@ -445,23 +445,21 @@
             .catch(() => { clientIP = "127.0.0.1 (Localhost)"; });
 
         let appUsers = [];
+        let auditLogs = [];
+        let securityLogs = [];
+        let loginLogs = [];
+
         let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
         let selectedUserId = null;
         let parsedExcelData = [];
 
-        function getAuditLogs() { return JSON.parse(localStorage.getItem('auditLogs')) || []; }
-        function saveAuditLogs(logs) { localStorage.setItem('auditLogs', JSON.stringify(logs)); }
-        function getSecurityLogs() { return JSON.parse(localStorage.getItem('securityLogs')) || []; }
-        function saveSecurityLogs(logs) { localStorage.setItem('securityLogs', JSON.stringify(logs)); }
-        function getLoginLogs() { return JSON.parse(localStorage.getItem('loginLogs')) || []; }
-        function saveLoginLogs(logs) { localStorage.setItem('loginLogs', JSON.stringify(logs)); }
-
-        // Khởi tạo hệ thống và tải người dùng từ Firestore
+        // Đồng bộ tải dữ liệu từ Firestore (users, auditLogs, securityLogs, loginLogs)
         async function initSystem() {
             try {
-                const querySnapshot = await getDocs(collection(db, "users"));
+                // 1. Tải users
+                const userSnapshot = await getDocs(collection(db, "users"));
                 appUsers = [];
-                querySnapshot.forEach((docSnap) => {
+                userSnapshot.forEach((docSnap) => {
                     appUsers.push({ id: docSnap.id, ...docSnap.data() });
                 });
 
@@ -484,18 +482,34 @@
                         await setDoc(doc(db, "users", adminUser.id || 'admin'), adminUser);
                     }
                 }
+
+                // 2. Tải auditLogs
+                const auditSnapshot = await getDocs(collection(db, "auditLogs"));
+                auditLogs = [];
+                auditSnapshot.forEach((docSnap) => {
+                    auditLogs.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
+                // 3. Tải securityLogs
+                const securitySnapshot = await getDocs(collection(db, "securityLogs"));
+                securityLogs = [];
+                securitySnapshot.forEach((docSnap) => {
+                    securityLogs.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
+                // 4. Tải loginLogs
+                const loginSnapshot = await getDocs(collection(db, "loginLogs"));
+                loginLogs = [];
+                loginSnapshot.forEach((docSnap) => {
+                    loginLogs.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
             } catch (error) {
                 console.error("Lỗi khi tải dữ liệu từ Firestore:", error);
             }
 
-            if (!localStorage.getItem('auditLogs')) localStorage.setItem('auditLogs', JSON.stringify([]));
-            if (!localStorage.getItem('securityLogs')) localStorage.setItem('securityLogs', JSON.stringify([]));
-            if (!localStorage.getItem('loginLogs')) localStorage.setItem('loginLogs', JSON.stringify([]));
-
             checkAuthState();
         }
-
-        function getUsers() { return appUsers; }
 
         window.goToHome = function() {
             if (!currentUser) return;
@@ -537,9 +551,9 @@
             document.getElementById('change-password-form').reset();
         };
 
-        function canModifyPoints() {
+        function hasPermission(perm) {
             if (!currentUser) return false;
-            return currentUser.role === 'Admin' || currentUser.role === 'GV' || currentUser.role === 'BCS';
+            return currentUser.permissions && currentUser.permissions.includes(perm);
         }
 
         function checkAuthState() {
@@ -567,7 +581,7 @@
                     if (createUserSection) createUserSection.classList.remove('hidden');
                 } else {
                     if (creationModeContainer) creationModeContainer.classList.add('hidden');
-                    if (createUserSection) createUserSection.classList.add('hidden');
+                    if (createUserSection) creationModeContainer.classList.add('hidden');
                     if (bulkUserSection) bulkUserSection.classList.add('hidden');
                 }
 
@@ -630,11 +644,11 @@
             }
             if (parsedExcelData.length === 0) return;
 
-            let securityLogs = getSecurityLogs();
             const role = document.getElementById('bulk-role').value;
             const permissions = ["xem_diem"];
             let addedCount = 0;
             const now = new Date();
+            const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
 
             for (const item of parsedExcelData) {
                 if (!appUsers.some(u => u.username === item.username)) {
@@ -652,21 +666,23 @@
                 }
             }
 
-            securityLogs.push({
+            // Đẩy securityLog lên Firestore
+            const newSecurityLog = {
                 action: `Tạo hàng loạt ${addedCount} tài khoản từ Excel`,
                 targetName: `Danh sách (${addedCount} người)`,
                 performedBy: currentUser.name,
                 ip: clientIP,
-                time: now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN')
-            });
-            saveSecurityLogs(securityLogs);
+                time: timeStr
+            };
+            const docRef = await addDoc(collection(db, "securityLogs"), newSecurityLog);
+            securityLogs.push({ id: docRef.id, ...newSecurityLog });
 
             document.getElementById('excel-file-input').value = '';
             document.getElementById('bulk-preview-container').classList.add('hidden');
             parsedExcelData = [];
             renderDashboard();
             switchCreationMode('single');
-            showPermissionModal(`Đã tạo thành công ${addedCount} tài khoản từ file Excel trên Firestore!`);
+            showPermissionModal(`Đã tạo thành công ${addedCount} tài khoản từ file Excel lên Firestore!`);
         };
 
         window.switchCreationMode = function(mode) {
@@ -706,16 +722,17 @@
                 currentUser = appUsers[userIndex];
                 localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
-                let securityLogs = getSecurityLogs();
                 const now = new Date();
-                securityLogs.push({
+                const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
+                const newSecurityLog = {
                     action: 'Đổi mật khẩu cá nhân',
                     targetName: currentUser.name,
                     performedBy: currentUser.name + ' (Tự đổi)',
                     ip: clientIP,
-                    time: now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN')
-                });
-                saveSecurityLogs(securityLogs);
+                    time: timeStr
+                };
+                const docRef = await addDoc(collection(db, "securityLogs"), newSecurityLog);
+                securityLogs.push({ id: docRef.id, ...newSecurityLog });
 
                 showPermissionModal('Đổi mật khẩu thành công!');
                 closePasswordModal();
@@ -723,10 +740,15 @@
         });
 
         window.switchTab = function(viewId) {
-            // Chỉ Admin mới được mở các trang: Quản lý danh sách AD, Nhật ký điểm, Nhật ký sửa đổi, Nhật ký đăng nhập
-            if (viewId === 'admin-gv-view' || viewId === 'audit-history-view' || viewId === 'security-history-view' || viewId === 'login-history-view') {
+            if (viewId === 'admin-gv-view') {
                 if (!currentUser || currentUser.role !== 'Admin') {
                     showPermissionModal('Truy cập bị từ chối! Mục này chỉ dành riêng cho tài khoản có quyền Admin.');
+                    return;
+                }
+            }
+            if (viewId.includes('history-view')) {
+                if (!hasPermission('xem_nhat_ky') && currentUser.role !== 'Admin') {
+                    showPermissionModal('Bạn không đủ quyền hạn để xem nhật ký hệ thống!');
                     return;
                 }
             }
@@ -793,7 +815,6 @@
             document.getElementById('profile-page-username').textContent = currentUser.username;
             document.getElementById('profile-page-role-badge').innerHTML = getRoleBadge(currentUser.role || 'Thành Viên');
 
-            const auditLogs = getAuditLogs();
             const container = document.getElementById('profile-page-audit-container');
             container.innerHTML = '';
 
@@ -822,7 +843,7 @@
             }
         }
 
-        document.getElementById('login-form').addEventListener('submit', (e) => {
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const u = document.getElementById('login-username').value.trim();
             const p = document.getElementById('login-password').value.trim();
@@ -832,15 +853,17 @@
                 currentUser = found;
                 localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
-                let loginLogs = getLoginLogs();
                 const now = new Date();
-                loginLogs.push({
+                const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
+                const newLoginLog = {
                     name: found.name,
                     username: found.username,
                     ip: clientIP,
-                    time: now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN')
-                });
-                saveLoginLogs(loginLogs);
+                    time: timeStr
+                };
+                const docRef = await addDoc(collection(db, "loginLogs"), newLoginLog);
+                loginLogs.push({ id: docRef.id, ...newLoginLog });
+
                 checkAuthState();
             } else {
                 showPermissionModal('Sai tên đăng nhập hoặc mật khẩu!');
@@ -863,8 +886,8 @@
             const checkboxes = document.querySelectorAll('input[name="permission"]:checked');
             const permissions = Array.from(checkboxes).map(cb => cb.value);
 
-            let securityLogs = getSecurityLogs();
             const now = new Date();
+            const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
 
             if (currentUser.role !== 'Admin') {
                 showPermissionModal('Chỉ tài khoản Quản Trị Viên (Admin) mới có quyền tạo tài khoản mới!');
@@ -887,14 +910,15 @@
             await setDoc(doc(db, "users", username), newUserData);
             appUsers.push({ id: username, ...newUserData });
 
-            securityLogs.push({
+            const newSecurityLog = {
                 action: 'Tạo tài khoản mới',
                 targetName: name,
                 performedBy: currentUser.name,
                 ip: clientIP,
-                time: now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN')
-            });
-            saveSecurityLogs(securityLogs);
+                time: timeStr
+            };
+            const docRef = await addDoc(collection(db, "securityLogs"), newSecurityLog);
+            securityLogs.push({ id: docRef.id, ...newSecurityLog });
 
             document.getElementById('add-user-form').reset();
             renderDashboard();
@@ -942,8 +966,8 @@
             const checkboxes = document.querySelectorAll('input[name="modal-permission"]:checked');
             const permissions = Array.from(checkboxes).map(cb => cb.value);
 
-            let securityLogs = getSecurityLogs();
             const now = new Date();
+            const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
 
             let userIndex = appUsers.findIndex(u => u.id == editingId || u.username == editingId);
             if (userIndex !== -1) {
@@ -968,14 +992,15 @@
                     name, username, password, role, permissions, score: appUsers[userIndex].score
                 });
 
-                securityLogs.push({
+                const newSecurityLog = {
                     action: 'Chỉnh sửa tài khoản',
                     targetName: name,
                     performedBy: currentUser.name,
                     ip: clientIP,
-                    time: now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN')
-                });
-                saveSecurityLogs(securityLogs);
+                    time: timeStr
+                };
+                const docRef = await addDoc(collection(db, "securityLogs"), newSecurityLog);
+                securityLogs.push({ id: docRef.id, ...newSecurityLog });
 
                 closeEditUserModal();
                 renderDashboard();
@@ -1003,7 +1028,7 @@
 
             if (count > 0) {
                 if (currentUser.role === 'Admin') btnDel.classList.remove('hidden');
-                if (canModifyPoints()) btnEditScore.classList.remove('hidden');
+                if (hasPermission('cong_tru_diem') || currentUser.role === 'Admin') btnEditScore.classList.remove('hidden');
             } else {
                 btnDel.classList.add('hidden');
                 btnEditScore.classList.add('hidden');
@@ -1046,6 +1071,8 @@
             const idsToDelete = Array.from(checkboxes).map(cb => cb.value);
 
             let deletedNames = [];
+            const now = new Date();
+            const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
 
             for (const id of idsToDelete) {
                 const found = appUsers.find(u => u.id == id || u.username == id);
@@ -1057,16 +1084,15 @@
 
             appUsers = appUsers.filter(u => !idsToDelete.includes(u.id?.toString()) && !idsToDelete.includes(u.username));
 
-            let securityLogs = getSecurityLogs();
-            const now = new Date();
-            securityLogs.push({
+            const newSecurityLog = {
                 action: `Xóa hàng loạt ${idsToDelete.length} tài khoản`,
                 targetName: deletedNames.join(', '),
                 performedBy: currentUser.name,
                 ip: clientIP,
-                time: now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN')
-            });
-            saveSecurityLogs(securityLogs);
+                time: timeStr
+            };
+            const docRef = await addDoc(collection(db, "securityLogs"), newSecurityLog);
+            securityLogs.push({ id: docRef.id, ...newSecurityLog });
 
             document.getElementById('delete-confirmation-gui').classList.add('hidden');
             document.getElementById('select-all-checkbox').checked = false;
@@ -1078,8 +1104,8 @@
         };
 
         window.promptBulkEditScore = function() {
-            if (!canModifyPoints()) {
-                showPermissionModal('Chỉ có Admin, GV và BCS mới có quyền cộng trừ điểm!');
+            if (!hasPermission('cong_tru_diem') && currentUser.role !== 'Admin') {
+                showPermissionModal('Bạn không có quyền sửa điểm!');
                 return;
             }
             const checkboxes = document.querySelectorAll('.user-checkbox:checked');
@@ -1095,10 +1121,6 @@
         };
 
         window.executeBulkEditScore = async function() {
-            if (!canModifyPoints()) {
-                showPermissionModal('Chỉ có Admin, GV và BCS mới có quyền cộng trừ điểm!');
-                return;
-            }
             const checkboxes = document.querySelectorAll('.user-checkbox:checked');
             const idsToEdit = Array.from(checkboxes).map(cb => cb.value);
             const actionType = document.getElementById('bulk-score-action').value;
@@ -1110,8 +1132,8 @@
                 return;
             }
 
-            let auditLogs = getAuditLogs();
             const now = new Date();
+            const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
 
             for (const id of idsToEdit) {
                 let user = appUsers.find(u => u.id == id || u.username == id);
@@ -1124,19 +1146,19 @@
 
                     await setDoc(doc(db, "users", user.username), user);
 
-                    auditLogs.push({
+                    const newAuditLog = {
                         type: actionType === 'minus' ? 'minus' : 'plus',
                         targetName: user.name,
                         points: actionType === 'set' ? Math.abs(user.score - oldScore) : val,
                         reason: `[Hàng loạt] ${reason}`,
                         performedBy: currentUser.name,
                         ip: clientIP,
-                        time: now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN')
-                    });
+                        time: timeStr
+                    };
+                    const docRef = await addDoc(collection(db, "auditLogs"), newAuditLog);
+                    auditLogs.push({ id: docRef.id, ...newAuditLog });
                 }
             }
-
-            saveAuditLogs(auditLogs);
 
             document.getElementById('bulk-edit-score-gui').classList.add('hidden');
             document.getElementById('bulk-score-reason').value = '';
@@ -1160,7 +1182,7 @@
                 tr.className = 'hover:bg-slate-50 transition';
 
                 let actionHtml = '';
-                if (canModifyPoints()) {
+                if (hasPermission('cong_tru_diem') || currentUser.role === 'Admin') {
                     actionHtml += `
                         <button onclick="openPointModal('${u.username}', 'plus')" class="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-md text-xs font-semibold hover:bg-emerald-100 mr-1">+ Cộng</button>
                         <button onclick="openPointModal('${u.username}', 'minus')" class="bg-red-50 text-red-600 px-3 py-1 rounded-md text-xs font-semibold hover:bg-red-100 mr-1">- Trừ</button>
@@ -1212,7 +1234,6 @@
         };
 
         window.renderAuditLogs = function() {
-            const auditLogs = getAuditLogs();
             const auditContainer = document.getElementById('audit-log-container');
             auditContainer.innerHTML = '';
             if (auditLogs.length === 0) {
@@ -1240,7 +1261,6 @@
         };
 
         window.renderSecurityLogs = function() {
-            const securityLogs = getSecurityLogs();
             const securityContainer = document.getElementById('security-log-container');
             securityContainer.innerHTML = '';
             if (securityLogs.length === 0) {
@@ -1266,7 +1286,6 @@
         };
 
         window.renderLoginLogs = function() {
-            const loginLogs = getLoginLogs();
             const loginContainer = document.getElementById('login-log-container');
             loginContainer.innerHTML = '';
             if (loginLogs.length === 0) {
@@ -1288,10 +1307,6 @@
         };
 
         window.openPointModal = function(username, type) {
-            if (!canModifyPoints()) {
-                showPermissionModal('Chỉ có Admin, GV và BCS mới có quyền cộng trừ điểm!');
-                return;
-            }
             const user = appUsers.find(u => u.username === username);
             if (!user) return;
 
@@ -1318,10 +1333,6 @@
 
         document.getElementById('point-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!canModifyPoints()) {
-                showPermissionModal('Chỉ có Admin, GV và BCS mới có quyền cộng trừ điểm!');
-                return;
-            }
             const type = document.getElementById('modal-action-type').value;
             const points = parseInt(document.getElementById('modal-points').value);
             const reason = document.getElementById('modal-reason').value.trim();
@@ -1334,18 +1345,19 @@
 
                 await setDoc(doc(db, "users", target.username), target);
 
-                let auditLogs = getAuditLogs();
                 const now = new Date();
-                auditLogs.push({
+                const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
+                const newAuditLog = {
                     type: type,
                     targetName: target.name,
                     points: points,
                     reason: reason,
                     performedBy: currentUser.name,
                     ip: clientIP,
-                    time: now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN')
-                });
-                saveAuditLogs(auditLogs);
+                    time: timeStr
+                };
+                const docRef = await addDoc(collection(db, "auditLogs"), newAuditLog);
+                auditLogs.push({ id: docRef.id, ...newAuditLog });
 
                 closePointModal();
                 document.getElementById('point-form').reset();
