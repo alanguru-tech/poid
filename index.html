@@ -37,7 +37,7 @@
             <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
                 <div onclick="goToHome()" class="flex items-center gap-3 cursor-pointer">
                     <img src="gd.png" alt="Logo" class="h-10 object-contain" onerror="this.style.display='none'">
-                    <h1 class="text-2xl font-extrabold tracking-wide">Hệ Thống Quản Lý Điểm Nội Bộ (Firestore)</h1>
+                    <h1 class="text-2xl font-extrabold tracking-wide">Hệ Thống Quản Lý Điểm Nội Bộ</h1>
                 </div>
                 <div class="relative">
                     <button onclick="toggleUserDropdown(event)" class="flex items-center gap-2 bg-indigo-700 hover:bg-indigo-800 px-3 py-1.5 rounded-lg text-sm font-semibold transition focus:outline-none">
@@ -59,11 +59,11 @@
         <div class="flex-1 flex flex-col md:flex-row relative">
             <aside id="left-sidebar" class="w-full md:w-64 bg-white border-r border-slate-200 p-4 transition-all duration-300 flex flex-col gap-2 shadow-sm">
                 <div class="text-xs font-bold uppercase text-slate-400 px-3 py-1">Danh Mục Quản Lý</div>
-                <button onclick="switchTab('manage-view')" id="btn-tab-manage" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-indigo-600 bg-indigo-50 transition flex items-center gap-2">📊 Bảng Điều Khiển Chung</button>
-                <button onclick="switchTab('admin-gv-view')" id="btn-tab-admin-gv" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🛡 Quản Lý Admin & GV</button>
-                <button onclick="switchTab('audit-history-view')" id="btn-tab-audit" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">📈 Nhật Ký Cộng/Trừ Điểm</button>
-                <button onclick="switchTab('security-history-view')" id="btn-tab-security" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🛡 Nhật Ký Bảo Mật</button>
-                <button onclick="switchTab('login-history-view')" id="btn-tab-login" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🔒 Nhật Ký Đăng Nhập</button>
+                <button onclick="switchTab('manage-view')" id="btn-tab-manage" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-indigo-600 bg-indigo-50 transition flex items-center gap-2">⚙️ Bảng Điều Khiển Chung</button>
+                <button onclick="switchTab('admin-gv-view')" id="btn-tab-admin-gv" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🛡 Quản Lý Danh Sách AD</button>
+                <button onclick="switchTab('audit-history-view')" id="btn-tab-audit" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">✒️ Nhật Ký Điểm</button>
+                <button onclick="switchTab('security-history-view')" id="btn-tab-security" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🛡 Nhật Ký Sửa Đổi</button>
+                <button onclick="switchTab('login-history-view')" id="btn-tab-login" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🗝️ Nhật Ký Đăng Nhập</button>
             </aside>
 
             <main class="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto">
