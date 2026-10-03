@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
+
 <body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col justify-between">
 
     <!-- GIAO DIỆN ĐĂNG NHẬP -->
@@ -20,13 +22,19 @@
             <form id="login-form" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Tên đăng nhập:</label>
-                    <input type="text" id="login-username" required class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Nhập username...">
+                    <input type="text" id="login-username" required
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Nhập username...">
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Mật khẩu:</label>
-                    <input type="password" id="login-password" required class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Nhập mật khẩu...">
+                    <input type="password" id="login-password" required
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Nhập mật khẩu...">
                 </div>
-                <button type="submit" class="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-semibold hover:bg-indigo-700 transition">Đăng Nhập</button>
+                <button type="submit"
+                    class="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-semibold hover:bg-indigo-700 transition">Đăng
+                    Nhập</button>
             </form>
         </div>
     </div>
@@ -40,30 +48,50 @@
                     <h1 class="text-2xl font-extrabold tracking-wide">Hệ Thống Quản Lý Điểm Nội Bộ</h1>
                 </div>
                 <div class="relative">
-                    <button onclick="toggleUserDropdown(event)" class="flex items-center gap-2 bg-indigo-700 hover:bg-indigo-800 px-3 py-1.5 rounded-lg text-sm font-semibold transition focus:outline-none">
+                    <button onclick="toggleUserDropdown(event)"
+                        class="flex items-center gap-2 bg-indigo-700 hover:bg-indigo-800 px-3 py-1.5 rounded-lg text-sm font-semibold transition focus:outline-none">
                         <span>Xin chào, <span id="user-fullname" class="underline"></span></span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
-                    <div id="user-dropdown-menu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl py-2 z-40 text-slate-800 border border-slate-100">
-                        <button onclick="switchTab('profile-view')" class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 flex items-center gap-3 transition">Thông tin tài khoản</button>
-                        <button onclick="openPasswordModal()" class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 flex items-center gap-3 transition">Đổi mật khẩu</button>
+                    <div id="user-dropdown-menu"
+                        class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl py-2 z-40 text-slate-800 border border-slate-100">
+                        <button onclick="switchTab('profile-view')"
+                            class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 flex items-center gap-3 transition">Thông
+                            tin tài khoản</button>
+                        <button onclick="openPasswordModal()"
+                            class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 flex items-center gap-3 transition">Đổi
+                            mật khẩu</button>
                         <div class="border-t border-slate-100 my-1"></div>
-                        <button onclick="logout()" class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition">Đăng xuất</button>
+                        <button onclick="logout()"
+                            class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition">Đăng
+                            xuất</button>
                     </div>
                 </div>
             </div>
         </header>
 
         <div class="flex-1 flex flex-col md:flex-row relative">
-            <aside id="left-sidebar" class="w-full md:w-64 bg-white border-r border-slate-200 p-4 transition-all duration-300 flex flex-col gap-2 shadow-sm">
+            <aside id="left-sidebar"
+                class="w-full md:w-64 bg-white border-r border-slate-200 p-4 transition-all duration-300 flex flex-col gap-2 shadow-sm">
                 <div class="text-xs font-bold uppercase text-slate-400 px-3 py-1">Danh Mục Quản Lý</div>
-                <button onclick="switchTab('manage-view')" id="btn-tab-manage" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-indigo-600 bg-indigo-50 transition flex items-center gap-2">⚙️ Bảng Điều Khiển Chung</button>
-                <button onclick="switchTab('admin-gv-view')" id="btn-tab-admin-gv" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🛡 Quản Lý Danh Sách AD</button>
-                <button onclick="switchTab('audit-history-view')" id="btn-tab-audit" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">✒️ Nhật Ký Điểm</button>
-                <button onclick="switchTab('security-history-view')" id="btn-tab-security" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🛡 Nhật Ký Sửa Đổi</button>
-                <button onclick="switchTab('login-history-view')" id="btn-tab-login" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🗝️️ Nhật Ký Đăng Nhập</button>
+                <button onclick="switchTab('manage-view')" id="btn-tab-manage"
+                    class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-indigo-600 bg-indigo-50 transition flex items-center gap-2">⚙️
+                    Bảng Điều Khiển Chung</button>
+                <button onclick="switchTab('admin-gv-view')" id="btn-tab-admin-gv"
+                    class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🛡
+                    Quản Lý Danh Sách AD</button>
+                <button onclick="switchTab('audit-history-view')" id="btn-tab-audit"
+                    class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">✒️
+                    Nhật Ký Điểm</button>
+                <button onclick="switchTab('security-history-view')" id="btn-tab-security"
+                    class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🛡
+                    Nhật Ký Sửa Đổi</button>
+                <button onclick="switchTab('login-history-view')" id="btn-tab-login"
+                    class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🗝️️
+                    Nhật Ký Đăng Nhập</button>
             </aside>
 
             <main class="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto">
@@ -71,8 +99,12 @@
                 <div id="manage-view" class="space-y-6">
                     <div id="admin-panel" class="space-y-6">
                         <div id="creation-mode-container" class="flex gap-2 border-b border-slate-200 pb-3">
-                            <button onclick="switchCreationMode('single')" id="btn-mode-single" class="px-4 py-2 rounded-lg text-sm font-bold bg-indigo-600 text-white transition">➕ Thêm Tài Khoản Đơn</button>
-                            <button onclick="switchCreationMode('bulk')" id="btn-mode-bulk" class="px-4 py-2 rounded-lg text-sm font-bold bg-slate-200 text-slate-700 transition">📂 Tạo Hàng Loạt từ File Excel</button>
+                            <button onclick="switchCreationMode('single')" id="btn-mode-single"
+                                class="px-4 py-2 rounded-lg text-sm font-bold bg-indigo-600 text-white transition">➕
+                                Thêm Tài Khoản Đơn</button>
+                            <button onclick="switchCreationMode('bulk')" id="btn-mode-bulk"
+                                class="px-4 py-2 rounded-lg text-sm font-bold bg-slate-200 text-slate-700 transition">📂
+                                Tạo Hàng Loạt từ File Excel</button>
                         </div>
 
                         <!-- Form thêm mới tài khoản đơn -->
@@ -83,119 +115,183 @@
 
                             <form id="add-user-form" class="space-y-4">
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                    <input type="text" id="new-name" placeholder="Họ và tên (name)" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                    <input type="text" id="new-username" placeholder="Tên đăng nhập (user)" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                    <input type="text" id="new-password" placeholder="Mật khẩu (password)" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <input type="text" id="new-name" placeholder="Họ và tên (name)" required
+                                        class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <input type="text" id="new-username" placeholder="Tên đăng nhập (user)" required
+                                        class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <input type="text" id="new-password" placeholder="Mật khẩu (password)" required
+                                        class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 </div>
 
                                 <div>
-                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Chọn Vai Trò (Huy Hiệu):</label>
-                                    <select id="new-role" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Chọn Vai Trò
+                                        (Huy Hiệu):</label>
+                                    <select id="new-role"
+                                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                         <option value="Thành Viên">Thành Viên (Mặc định)</option>
                                         <option value="BCS">BCS (Ban Cán Sự)</option>
                                         <option value="GV">GV (Giáo Viên)</option>
                                         <option value="Admin">Admin (Quản Trị Viên)</option>
                                     </select>
                                 </div>
-                                
+
                                 <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Phân quyền chi tiết:</label>
+                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Phân quyền chi
+                                        tiết:</label>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-                                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="permission" value="xem_diem" checked class="rounded text-indigo-600"> Xem điểm số</label>
-                                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="permission" value="cong_tru_diem" class="rounded text-indigo-600"> Cộng/Trừ điểm</label>
-                                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="permission" value="quan_ly_user" class="rounded text-indigo-600"> Quản lý user</label>
-                                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="permission" value="xem_nhat_ky" class="rounded text-indigo-600"> Xem nhật ký</label>
+                                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
+                                                name="permission" value="xem_diem" checked
+                                                class="rounded text-indigo-600"> Xem điểm số</label>
+                                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
+                                                name="permission" value="cong_tru_diem" class="rounded text-indigo-600">
+                                            Cộng/Trừ điểm</label>
+                                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
+                                                name="permission" value="quan_ly_user" class="rounded text-indigo-600">
+                                            Quản lý user</label>
+                                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
+                                                name="permission" value="xem_nhat_ky" class="rounded text-indigo-600">
+                                            Xem nhật ký</label>
                                     </div>
                                 </div>
 
-                                <button type="submit" id="form-submit-btn" class="w-full bg-emerald-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition">+ Tạo Tài Khoản Mới</button>
+                                <button type="submit" id="form-submit-btn"
+                                    class="w-full bg-emerald-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition">+
+                                    Tạo Tài Khoản Mới</button>
                             </form>
                         </div>
 
                         <!-- Form tạo hàng loạt -->
-                        <div id="bulk-user-section" class="hidden bg-white rounded-xl shadow p-6 border-2 border-purple-100 space-y-5">
+                        <div id="bulk-user-section"
+                            class="hidden bg-white rounded-xl shadow p-6 border-2 border-purple-100 space-y-5">
                             <h2 class="text-lg font-bold text-slate-700">📂 Tạo Tài Khoản Hàng Loạt từ File Excel</h2>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div
+                                class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center bg-slate-50 p-4 rounded-xl border border-slate-200">
                                 <div>
-                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Bước 1: Tải file mẫu chuẩn</label>
-                                    <button type="button" onclick="downloadExcelTemplate()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition inline-flex items-center gap-2">📥 Tải file mau.xlsx</button>
+                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Bước 1: Tải
+                                        file mẫu chuẩn</label>
+                                    <button type="button" onclick="downloadExcelTemplate()"
+                                        class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition inline-flex items-center gap-2">📥
+                                        Tải file mau.xlsx</button>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Bước 2: Chọn file đã điền</label>
-                                    <input type="file" id="excel-file-input" accept=".xlsx, .xls" onchange="handleExcelUpload(event)" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer">
+                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Bước 2: Chọn
+                                        file đã điền</label>
+                                    <input type="file" id="excel-file-input" accept=".xlsx, .xls"
+                                        onchange="handleExcelUpload(event)"
+                                        class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer">
                                 </div>
                             </div>
                             <div id="bulk-preview-container" class="hidden space-y-4 border-t border-slate-200 pt-4">
-                                <div class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg text-xs font-semibold">Đã đọc thành công <span id="excel-count" class="font-bold">0</span> tài khoản từ file.</div>
+                                <div class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg text-xs font-semibold">Đã
+                                    đọc thành công <span id="excel-count" class="font-bold">0</span> tài khoản từ file.
+                                </div>
                                 <div>
-                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Chọn vai trò chung cho danh sách tải lên:</label>
-                                    <select id="bulk-role" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Chọn vai trò
+                                        chung cho danh sách tải lên:</label>
+                                    <select id="bulk-role"
+                                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
                                         <option value="Thành Viên">Thành Viên</option>
                                         <option value="BCS">BCS (Ban Cán Sự)</option>
                                         <option value="GV">GV (Giáo Viên)</option>
                                         <option value="Admin">Admin (Quản Trị)</option>
                                     </select>
                                 </div>
-                                <button type="button" onclick="submitBulkCreate()" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg text-sm font-bold transition shadow-md">🚀 Tiến Hành Tạo Tài Khoản Hàng Loạt</button>
+                                <button type="button" onclick="submitBulkCreate()"
+                                    class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg text-sm font-bold transition shadow-md">🚀
+                                    Tiến Hành Tạo Tài Khoản Hàng Loạt</button>
                             </div>
                         </div>
 
                         <!-- Giao diện xác nhận xóa nhiều tài khoản trực tiếp -->
-                        <div id="delete-confirmation-gui" class="hidden bg-white rounded-xl shadow-xl p-6 border-2 border-red-200 space-y-4">
-                            <div class="flex items-center gap-3 bg-red-50 p-3 rounded-lg border border-red-100 text-red-700">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                        <div id="delete-confirmation-gui"
+                            class="hidden bg-white rounded-xl shadow-xl p-6 border-2 border-red-200 space-y-4">
+                            <div
+                                class="flex items-center gap-3 bg-red-50 p-3 rounded-lg border border-red-100 text-red-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
                                 <div>
                                     <h3 class="font-bold text-sm">Xác Nhận Xóa Vĩnh Viễn Các Tài Khoản Đã Chọn</h3>
-                                    <p class="text-xs text-red-600">Bạn đang chuẩn bị xóa các tài khoản được chọn khỏi hệ thống:</p>
+                                    <p class="text-xs text-red-600">Bạn đang chuẩn bị xóa các tài khoản được chọn khỏi
+                                        hệ thống:</p>
                                 </div>
                             </div>
-                            <div id="del-gui-list-container" class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-sm max-h-40 overflow-y-auto"></div>
+                            <div id="del-gui-list-container"
+                                class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-sm max-h-40 overflow-y-auto">
+                            </div>
                             <div class="flex justify-end gap-3 pt-2">
-                                <button type="button" onclick="cancelDeleteGUI()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-300 transition">Hủy bỏ</button>
-                                <button type="button" onclick="executeConfirmedDelete()" class="bg-red-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition">Xác nhận Xóa Tất Cả</button>
+                                <button type="button" onclick="cancelDeleteGUI()"
+                                    class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-300 transition">Hủy
+                                    bỏ</button>
+                                <button type="button" onclick="executeConfirmedDelete()"
+                                    class="bg-red-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition">Xác
+                                    nhận Xóa Tất Cả</button>
                             </div>
                         </div>
 
                         <!-- Giao diện sửa điểm hàng loạt trực tiếp -->
-                        <div id="bulk-edit-score-gui" class="hidden bg-white rounded-xl shadow-xl p-6 border-2 border-indigo-200 space-y-4">
-                            <div class="flex items-center gap-3 bg-indigo-50 p-3 rounded-lg border border-indigo-100 text-indigo-700">
+                        <div id="bulk-edit-score-gui"
+                            class="hidden bg-white rounded-xl shadow-xl p-6 border-2 border-indigo-200 space-y-4">
+                            <div
+                                class="flex items-center gap-3 bg-indigo-50 p-3 rounded-lg border border-indigo-100 text-indigo-700">
                                 <div>
                                     <h3 class="font-bold text-sm">Sửa Điểm Hàng Loạt Cho Các Tài Khoản Đã Chọn</h3>
-                                    <p class="text-xs text-indigo-600">Tác động điểm số cùng lúc cho các tài khoản đang đánh dấu tích:</p>
+                                    <p class="text-xs text-indigo-600">Tác động điểm số cùng lúc cho các tài khoản đang
+                                        đánh dấu tích:</p>
                                 </div>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div>
-                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Thao tác:</label>
-                                    <select id="bulk-score-action" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Thao
+                                        tác:</label>
+                                    <select id="bulk-score-action"
+                                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                         <option value="plus">Cộng thêm điểm</option>
                                         <option value="minus">Trừ bớt điểm</option>
                                         <option value="set">Đặt cố định điểm</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Số điểm:</label>
-                                    <input type="number" id="bulk-score-value" min="0" value="10" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Số
+                                        điểm:</label>
+                                    <input type="number" id="bulk-score-value" min="0" value="10" required
+                                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Lý do thay đổi:</label>
-                                    <input type="text" id="bulk-score-reason" placeholder="Nhập lý do..." required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Lý do thay
+                                        đổi:</label>
+                                    <input type="text" id="bulk-score-reason" placeholder="Nhập lý do..." required
+                                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 </div>
                             </div>
                             <div class="flex justify-end gap-3 pt-2">
-                                <button type="button" onclick="cancelBulkEditScoreGUI()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-300 transition">Hủy bỏ</button>
-                                <button type="button" onclick="executeBulkEditScore()" class="bg-indigo-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition">Áp Dụng Điểm</button>
+                                <button type="button" onclick="cancelBulkEditScoreGUI()"
+                                    class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-300 transition">Hủy
+                                    bỏ</button>
+                                <button type="button" onclick="executeBulkEditScore()"
+                                    class="bg-indigo-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition">Áp
+                                    Dụng Điểm</button>
                             </div>
                         </div>
 
                         <!-- Danh sách thành viên chung -->
                         <div class="bg-white rounded-xl shadow p-6">
-                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-                                <h2 class="text-lg font-bold text-slate-700">📋 Danh Sách Thành Viên (Màn Hình Chung)</h2>
+                            <div
+                                class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+                                <h2 class="text-lg font-bold text-slate-700">📋 Danh Sách Thành Viên (Màn Hình Chung)
+                                </h2>
                                 <div class="flex items-center flex-wrap gap-2">
-                                    <button id="btn-bulk-edit-score-action" onclick="promptBulkEditScore()" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow-sm">✏️ Sửa điểm đã chọn (<span id="selected-count-score">0</span>)</button>
-                                    <button id="btn-bulk-delete-action" onclick="promptBulkDelete()" class="hidden bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow-sm">🗑 Xóa các mục đã chọn (<span id="selected-count-del">0</span>)</button>
-                                    <span id="total-members-count" class="text-sm bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-medium">Tổng số: 0 thành viên</span>
+                                    <button id="btn-bulk-edit-score-action" onclick="promptBulkEditScore()"
+                                        class="hidden bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow-sm">✏️
+                                        Sửa điểm đã chọn (<span id="selected-count-score">0</span>)</button>
+                                    <button id="btn-bulk-delete-action" onclick="promptBulkDelete()"
+                                        class="hidden bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow-sm">🗑
+                                        Xóa các mục đã chọn (<span id="selected-count-del">0</span>)</button>
+                                    <span id="total-members-count"
+                                        class="text-sm bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-medium">Tổng
+                                        số: 0 thành viên</span>
                                 </div>
                             </div>
                             <div class="overflow-x-auto">
@@ -203,7 +299,9 @@
                                     <thead>
                                         <tr class="border-b border-slate-200 text-slate-500 text-sm">
                                             <th class="py-3 px-4 w-10 text-center">
-                                                <input type="checkbox" id="select-all-checkbox" onclick="toggleSelectAll(this)" class="rounded text-indigo-600 cursor-pointer">
+                                                <input type="checkbox" id="select-all-checkbox"
+                                                    onclick="toggleSelectAll(this)"
+                                                    class="rounded text-indigo-600 cursor-pointer">
                                             </th>
                                             <th class="py-3 px-4">Họ và Tên</th>
                                             <th class="py-3 px-4">Tài khoản</th>
@@ -223,21 +321,26 @@
                 <div id="profile-view" class="space-y-6 hidden">
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                         <div class="lg:col-span-5 space-y-6">
-                            <div class="bg-white border-l-4 border-indigo-600 border border-slate-200 rounded-xl p-5 shadow-sm space-y-2">
-                                <span class="text-xs font-bold uppercase text-slate-400 tracking-wider">Điểm số hiện tại của bạn</span>
+                            <div
+                                class="bg-white border-l-4 border-indigo-600 border border-slate-200 rounded-xl p-5 shadow-sm space-y-2">
+                                <span class="text-xs font-bold uppercase text-slate-400 tracking-wider">Điểm số hiện tại
+                                    của bạn</span>
                                 <h3 id="profile-page-score" class="text-4xl font-black text-indigo-600">0</h3>
                                 <p class="text-xs text-slate-500">Hãy cố gắng tích lũy thêm điểm thật tốt nhé!</p>
                             </div>
                             <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
-                                <span class="text-xs font-bold uppercase text-slate-400 tracking-wider">Thông tin định danh</span>
+                                <span class="text-xs font-bold uppercase text-slate-400 tracking-wider">Thông tin định
+                                    danh</span>
                                 <div class="space-y-3 text-sm">
                                     <div>
                                         <span class="text-slate-500 block text-xs">Họ và tên:</span>
-                                        <span id="profile-page-name" class="font-bold text-slate-800 text-base">---</span>
+                                        <span id="profile-page-name"
+                                            class="font-bold text-slate-800 text-base">---</span>
                                     </div>
                                     <div>
                                         <span class="text-slate-500 block text-xs">Tên đăng nhập (Username):</span>
-                                        <span id="profile-page-username" class="font-mono font-semibold text-slate-700 text-base">---</span>
+                                        <span id="profile-page-username"
+                                            class="font-mono font-semibold text-slate-700 text-base">---</span>
                                     </div>
                                     <div>
                                         <span class="text-slate-500 block text-xs">Vai trò hệ thống:</span>
@@ -247,11 +350,14 @@
                             </div>
                         </div>
                         <div class="lg:col-span-7">
-                            <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4 min-h-[420px] flex flex-col">
-                                <span class="text-xs font-bold uppercase text-slate-400 tracking-wider flex items-center gap-2">
+                            <div
+                                class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4 min-h-[420px] flex flex-col">
+                                <span
+                                    class="text-xs font-bold uppercase text-slate-400 tracking-wider flex items-center gap-2">
                                     📜 Lịch Sử Cộng/Trừ Điểm & Lý Do Của Bạn
                                 </span>
-                                <div id="profile-page-audit-container" class="overflow-y-auto max-h-[400px] space-y-3 pr-1 text-sm flex-1"></div>
+                                <div id="profile-page-audit-container"
+                                    class="overflow-y-auto max-h-[400px] space-y-3 pr-1 text-sm flex-1"></div>
                             </div>
                         </div>
                     </div>
@@ -262,10 +368,14 @@
                     <div class="bg-white rounded-xl shadow p-6">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                             <div>
-                                <h2 class="text-lg font-bold text-slate-700">🛡 Quản Lý Tài Khoản Admin & Giáo Viên (GV)</h2>
-                                <p class="text-xs text-slate-500 mt-0.5">Danh mục đặc biệt yêu cầu quyền Quản Trị Viên (Admin)</p>
+                                <h2 class="text-lg font-bold text-slate-700">🛡 Quản Lý Tài Khoản Admin & Giáo Viên (GV)
+                                </h2>
+                                <p class="text-xs text-slate-500 mt-0.5">Danh mục đặc biệt yêu cầu quyền Quản Trị Viên
+                                    (Admin)</p>
                             </div>
-                            <span id="total-admin-gv-count" class="text-sm bg-red-50 text-red-600 px-3 py-1 rounded-full font-medium border border-red-100">Tổng số: 0 tài khoản</span>
+                            <span id="total-admin-gv-count"
+                                class="text-sm bg-red-50 text-red-600 px-3 py-1 rounded-full font-medium border border-red-100">Tổng
+                                số: 0 tài khoản</span>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse">
@@ -288,23 +398,28 @@
                 <div id="audit-history-view" class="space-y-6 hidden">
                     <div class="bg-white rounded-xl shadow p-6 flex flex-col">
                         <h2 class="text-lg font-bold text-slate-700 mb-4">📊 Nhật Ký Cộng / Trừ Điểm Toàn Bộ</h2>
-                        <div id="audit-log-container" class="overflow-y-auto max-h-[600px] space-y-3 pr-1 text-sm"></div>
+                        <div id="audit-log-container" class="overflow-y-auto max-h-[600px] space-y-3 pr-1 text-sm">
+                        </div>
                     </div>
                 </div>
 
                 <!-- VIEW 4: NHẬT KÝ BẢO MẬT -->
                 <div id="security-history-view" class="space-y-6 hidden">
                     <div class="bg-white rounded-xl shadow p-6 flex flex-col">
-                        <h2 class="text-lg font-bold text-slate-700 mb-2 text-amber-600">🛡 Nhật Ký Thay Đổi Tài Khoản & Bảo Mật</h2>
-                        <div id="security-log-container" class="overflow-y-auto max-h-[600px] space-y-3 pr-1 text-sm"></div>
+                        <h2 class="text-lg font-bold text-slate-700 mb-2 text-amber-600">🛡 Nhật Ký Thay Đổi Tài Khoản &
+                            Bảo Mật</h2>
+                        <div id="security-log-container" class="overflow-y-auto max-h-[600px] space-y-3 pr-1 text-sm">
+                        </div>
                     </div>
                 </div>
 
                 <!-- VIEW 5: NHẬT KÝ ĐĂNG NHẬP -->
                 <div id="login-history-view" class="space-y-6 hidden">
                     <div class="bg-white rounded-xl shadow p-6 flex flex-col">
-                        <h2 class="text-lg font-bold text-slate-700 mb-4 text-indigo-700">🔒 Nhật Ký Đăng Nhập Hệ Thống</h2>
-                        <div id="login-log-container" class="overflow-y-auto max-h-[600px] space-y-2 pr-1 text-sm"></div>
+                        <h2 class="text-lg font-bold text-slate-700 mb-4 text-indigo-700">🔒 Nhật Ký Đăng Nhập Hệ Thống
+                        </h2>
+                        <div id="login-log-container" class="overflow-y-auto max-h-[600px] space-y-2 pr-1 text-sm">
+                        </div>
                     </div>
                 </div>
             </main>
@@ -317,30 +432,36 @@
 
     <!-- MODAL CHỈNH SỬA TÀI KHOẢN -->
     <div id="edit-user-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl border-2 border-indigo-100 max-h-[90vh] overflow-y-auto">
+        <div
+            class="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl border-2 border-indigo-100 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
                 <h2 id="modal-edit-title" class="text-lg font-bold text-slate-700">Chỉnh Sửa Tài Khoản</h2>
-                <button type="button" onclick="closeEditUserModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
+                <button type="button" onclick="closeEditUserModal()"
+                    class="text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
             </div>
             <form id="modal-edit-user-form" class="space-y-4">
                 <input type="hidden" id="modal-editing-user-id">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Họ và tên:</label>
-                        <input type="text" id="modal-new-name" placeholder="Họ và tên..." required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <input type="text" id="modal-new-name" placeholder="Họ và tên..." required
+                            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     </div>
                     <div>
                         <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Tên đăng nhập:</label>
-                        <input type="text" id="modal-new-username" placeholder="Tên đăng nhập..." required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <input type="text" id="modal-new-username" placeholder="Tên đăng nhập..." required
+                            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Mật khẩu:</label>
-                    <input type="text" id="modal-new-password" placeholder="Mật khẩu..." required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="text" id="modal-new-password" placeholder="Mật khẩu..." required
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Chọn Vai Trò:</label>
-                    <select id="modal-new-role" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <select id="modal-new-role"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <option value="Thành Viên">Thành Viên</option>
                         <option value="BCS">BCS (Ban Cán Sự)</option>
                         <option value="GV">GV (Giáo Viên)</option>
@@ -350,15 +471,26 @@
                 <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
                     <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Phân quyền chi tiết:</label>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="modal-permission" value="xem_diem" class="rounded text-indigo-600"> Xem điểm số</label>
-                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="modal-permission" value="cong_tru_diem" class="rounded text-indigo-600"> Cộng/Trừ điểm</label>
-                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="modal-permission" value="quan_ly_user" class="rounded text-indigo-600"> Quản lý user</label>
-                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="modal-permission" value="xem_nhat_ky" class="rounded text-indigo-600"> Xem nhật ký</label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
+                                name="modal-permission" value="xem_diem" class="rounded text-indigo-600"> Xem điểm
+                            số</label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
+                                name="modal-permission" value="cong_tru_diem" class="rounded text-indigo-600"> Cộng/Trừ
+                            điểm</label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
+                                name="modal-permission" value="quan_ly_user" class="rounded text-indigo-600"> Quản lý
+                            user</label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
+                                name="modal-permission" value="xem_nhat_ky" class="rounded text-indigo-600"> Xem nhật
+                            ký</label>
                     </div>
                 </div>
                 <div class="flex justify-end gap-3 pt-2">
-                    <button type="button" onclick="closeEditUserModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300">Hủy</button>
-                    <button type="submit" class="px-5 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition">Lưu Thay Đổi</button>
+                    <button type="button" onclick="closeEditUserModal()"
+                        class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300">Hủy</button>
+                    <button type="submit"
+                        class="px-5 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition">Lưu
+                        Thay Đổi</button>
                 </div>
             </form>
         </div>
@@ -367,10 +499,14 @@
     <!-- MODAL THÔNG BÁO LỖI QUYỀN HẠN -->
     <div id="permission-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl max-w-sm w-full p-6 shadow-xl text-center space-y-4">
-            <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold">⚠️</div>
+            <div
+                class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
+                ⚠️</div>
             <h3 class="text-lg font-bold text-slate-800">Thông Báo Quyền Hạn</h3>
             <p id="permission-msg" class="text-sm text-slate-600">Bạn không đủ quyền hạn để thực hiện thao tác này!</p>
-            <button type="button" onclick="closePermissionModal()" class="w-full py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition">Đã hiểu</button>
+            <button type="button" onclick="closePermissionModal()"
+                class="w-full py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition">Đã
+                hiểu</button>
         </div>
     </div>
 
@@ -381,15 +517,20 @@
             <form id="change-password-form" class="space-y-3">
                 <div>
                     <label class="block text-xs font-semibold text-slate-500 mb-1">Mật khẩu cũ:</label>
-                    <input type="password" id="old-password" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="password" id="old-password" required
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-500 mb-1">Mật khẩu mới:</label>
-                    <input type="password" id="new-password-user" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="password" id="new-password-user" required
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
                 <div class="flex justify-end gap-3 pt-2">
-                    <button type="button" onclick="closePasswordModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300">Hủy</button>
-                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">Cập nhật</button>
+                    <button type="button" onclick="closePasswordModal()"
+                        class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300">Hủy</button>
+                    <button type="submit"
+                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">Cập
+                        nhật</button>
                 </div>
             </form>
         </div>
@@ -399,20 +540,25 @@
     <div id="point-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
             <h3 id="modal-title" class="text-lg font-bold text-slate-800 mb-2">Cập nhật điểm thành viên</h3>
-            <p class="text-sm text-slate-500 mb-4">Thành viên: <span id="modal-target-name" class="font-bold text-slate-700"></span></p>
+            <p class="text-sm text-slate-500 mb-4">Thành viên: <span id="modal-target-name"
+                    class="font-bold text-slate-700"></span></p>
             <form id="point-form" class="space-y-4">
                 <input type="hidden" id="modal-action-type">
                 <div>
                     <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Số điểm:</label>
-                    <input type="number" id="modal-points" min="1" value="10" required class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="number" id="modal-points" min="1" value="10" required
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Lý do:</label>
-                    <textarea id="modal-reason" rows="3" required placeholder="Nhập lý do chi tiết..." class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    <textarea id="modal-reason" rows="3" required placeholder="Nhập lý do chi tiết..."
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
                 </div>
                 <div class="flex justify-end gap-3 pt-2">
-                    <button type="button" onclick="closePointModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300">Hủy</button>
-                    <button type="submit" id="modal-submit-btn" class="px-4 py-2 text-white rounded-lg text-sm font-medium">Xác nhận</button>
+                    <button type="button" onclick="closePointModal()"
+                        class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300">Hủy</button>
+                    <button type="submit" id="modal-submit-btn"
+                        class="px-4 py-2 text-white rounded-lg text-sm font-medium">Xác nhận</button>
                 </div>
             </form>
         </div>
@@ -438,7 +584,7 @@
         const analytics = getAnalytics(app);
         const db = getFirestore(app);
 
-        let clientIP = "192.168.1.50"; 
+        let clientIP = "192.168.1.50";
         fetch('https://api64.ipify.org?format=json')
             .then(response => response.json())
             .then(data => { clientIP = data.ip; })
@@ -511,7 +657,7 @@
             checkAuthState();
         }
 
-        window.goToHome = function() {
+        window.goToHome = function () {
             if (!currentUser) return;
             if (currentUser.role === 'Admin' || currentUser.role === 'GV' || currentUser.role === 'BCS') {
                 switchTab('manage-view');
@@ -520,8 +666,8 @@
             }
         };
 
-        window.getRoleBadge = function(role) {
-            switch(role) {
+        window.getRoleBadge = function (role) {
+            switch (role) {
                 case 'Admin': return `<span class="bg-red-100 text-red-700 px-2.5 py-1 rounded-full text-xs font-bold">🛡 Admin</span>`;
                 case 'GV': return `<span class="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full text-xs font-bold">👨‍🏫 GV</span>`;
                 case 'BCS': return `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-xs font-bold">⭐ BCS</span>`;
@@ -529,7 +675,7 @@
             }
         };
 
-        window.toggleUserDropdown = function(e) {
+        window.toggleUserDropdown = function (e) {
             e.stopPropagation();
             document.getElementById('user-dropdown-menu').classList.toggle('hidden');
         };
@@ -539,14 +685,14 @@
             if (dropdown && !dropdown.classList.contains('hidden')) dropdown.classList.add('hidden');
         });
 
-        window.showPermissionModal = function(msg) {
+        window.showPermissionModal = function (msg) {
             document.getElementById('permission-msg').textContent = msg || "Bạn không đủ quyền hạn để thực hiện thao tác này!";
             document.getElementById('permission-modal').classList.remove('hidden');
         };
-        window.closePermissionModal = function() { document.getElementById('permission-modal').classList.add('hidden'); };
+        window.closePermissionModal = function () { document.getElementById('permission-modal').classList.add('hidden'); };
 
-        window.openPasswordModal = function() { document.getElementById('password-modal').classList.remove('hidden'); };
-        window.closePasswordModal = function() {
+        window.openPasswordModal = function () { document.getElementById('password-modal').classList.remove('hidden'); };
+        window.closePasswordModal = function () {
             document.getElementById('password-modal').classList.add('hidden');
             document.getElementById('change-password-form').reset();
         };
@@ -581,7 +727,7 @@
                     if (createUserSection) createUserSection.classList.remove('hidden');
                 } else {
                     if (creationModeContainer) creationModeContainer.classList.add('hidden');
-                    if (createUserSection) creationModeContainer.classList.add('hidden');
+                    if (createUserSection) createUserSection.classList.add('hidden');
                     if (bulkUserSection) bulkUserSection.classList.add('hidden');
                 }
 
@@ -593,7 +739,7 @@
             }
         }
 
-        window.downloadExcelTemplate = function() {
+        window.downloadExcelTemplate = function () {
             const templateData = [
                 { "TT": 1, "name": "Nguyễn Văn A", "user": "nguyenvana", "point": 100, "password": "123" },
                 { "TT": 2, "name": "Trần Thị B", "user": "tranthib", "point": 100, "password": "123" }
@@ -604,11 +750,11 @@
             XLSX.writeFile(workbook, "mau.xlsx");
         };
 
-        window.handleExcelUpload = function(e) {
+        window.handleExcelUpload = function (e) {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
@@ -637,7 +783,7 @@
             reader.readAsArrayBuffer(file);
         };
 
-        window.submitBulkCreate = async function() {
+        window.submitBulkCreate = async function () {
             if (currentUser.role !== 'Admin') {
                 showPermissionModal('Chỉ tài khoản Admin mới có quyền tạo hàng loạt!');
                 return;
@@ -685,7 +831,7 @@
             showPermissionModal(`Đã tạo thành công ${addedCount} tài khoản từ file Excel lên Firestore!`);
         };
 
-        window.switchCreationMode = function(mode) {
+        window.switchCreationMode = function (mode) {
             const singleSection = document.getElementById('create-user-section');
             const bulkSection = document.getElementById('bulk-user-section');
             const btnSingle = document.getElementById('btn-mode-single');
@@ -718,7 +864,7 @@
                 }
                 appUsers[userIndex].password = newPass;
                 await setDoc(doc(db, "users", appUsers[userIndex].id || appUsers[userIndex].username), appUsers[userIndex]);
-                
+
                 currentUser = appUsers[userIndex];
                 localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
@@ -739,7 +885,7 @@
             }
         });
 
-        window.switchTab = function(viewId) {
+        window.switchTab = function (viewId) {
             if (viewId === 'admin-gv-view') {
                 if (!currentUser || currentUser.role !== 'Admin') {
                     showPermissionModal('Truy cập bị từ chối! Mục này chỉ dành riêng cho tài khoản có quyền Admin.');
@@ -870,7 +1016,7 @@
             }
         });
 
-        window.logout = function() {
+        window.logout = function () {
             currentUser = null;
             localStorage.removeItem('currentUser');
             checkAuthState();
@@ -926,7 +1072,7 @@
             showPermissionModal('Tạo tài khoản và phân quyền thành công trên Firestore!');
         });
 
-        window.editUser = function(id) {
+        window.editUser = function (id) {
             if (currentUser.role !== 'Admin' && currentUser.role !== 'GV') {
                 showPermissionModal('Bạn không có quyền chỉnh sửa thông tin tài khoản khác!');
                 return;
@@ -950,7 +1096,7 @@
             document.getElementById('edit-user-modal').classList.remove('hidden');
         };
 
-        window.closeEditUserModal = function() {
+        window.closeEditUserModal = function () {
             document.getElementById('edit-user-modal').classList.add('hidden');
             document.getElementById('modal-edit-user-form').reset();
         };
@@ -975,7 +1121,7 @@
                     showPermissionModal('Tên đăng nhập này đã tồn tại ở tài khoản khác!');
                     return;
                 }
-                
+
                 const oldUsername = appUsers[userIndex].username;
                 if (oldUsername !== username) {
                     await deleteDoc(doc(db, "users", oldUsername));
@@ -1009,7 +1155,7 @@
             }
         });
 
-        window.toggleSelectAll = function(masterCheckbox) {
+        window.toggleSelectAll = function (masterCheckbox) {
             const checkboxes = document.querySelectorAll('.user-checkbox');
             checkboxes.forEach(cb => {
                 cb.checked = masterCheckbox.checked;
@@ -1017,7 +1163,7 @@
             updateBulkActionButtonsState();
         };
 
-        window.updateBulkActionButtonsState = function() {
+        window.updateBulkActionButtonsState = function () {
             const checkboxes = document.querySelectorAll('.user-checkbox:checked');
             const count = checkboxes.length;
             const btnDel = document.getElementById('btn-bulk-delete-action');
@@ -1035,7 +1181,7 @@
             }
         };
 
-        window.promptBulkDelete = function() {
+        window.promptBulkDelete = function () {
             if (currentUser.role !== 'Admin') {
                 showPermissionModal('Chỉ tài khoản Quản Trị Viên (Admin) mới có quyền xóa tài khoản!');
                 return;
@@ -1062,11 +1208,11 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        window.cancelDeleteGUI = function() {
+        window.cancelDeleteGUI = function () {
             document.getElementById('delete-confirmation-gui').classList.add('hidden');
         };
 
-        window.executeConfirmedDelete = async function() {
+        window.executeConfirmedDelete = async function () {
             const checkboxes = document.querySelectorAll('.user-checkbox:checked');
             const idsToDelete = Array.from(checkboxes).map(cb => cb.value);
 
@@ -1103,7 +1249,7 @@
             showPermissionModal(`Đã xóa thành công ${idsToDelete.length} tài khoản khỏi Firestore!`);
         };
 
-        window.promptBulkEditScore = function() {
+        window.promptBulkEditScore = function () {
             if (!hasPermission('cong_tru_diem') && currentUser.role !== 'Admin') {
                 showPermissionModal('Bạn không có quyền sửa điểm!');
                 return;
@@ -1116,11 +1262,11 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        window.cancelBulkEditScoreGUI = function() {
+        window.cancelBulkEditScoreGUI = function () {
             document.getElementById('bulk-edit-score-gui').classList.add('hidden');
         };
 
-        window.executeBulkEditScore = async function() {
+        window.executeBulkEditScore = async function () {
             const checkboxes = document.querySelectorAll('.user-checkbox:checked');
             const idsToEdit = Array.from(checkboxes).map(cb => cb.value);
             const actionType = document.getElementById('bulk-score-action').value;
@@ -1170,13 +1316,13 @@
             showPermissionModal(`Đã cập nhật điểm thành công cho ${idsToEdit.length} tài khoản trên Firestore!`);
         };
 
-        window.renderDashboard = function() {
+        window.renderDashboard = function () {
             const publicUsers = appUsers.filter(u => u.role !== 'Admin' && u.role !== 'GV');
             document.getElementById('total-members-count').textContent = `Tổng số: ${publicUsers.length} thành viên`;
 
             const tableBody = document.getElementById('member-table-body');
             tableBody.innerHTML = '';
-            
+
             publicUsers.forEach(u => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition';
@@ -1206,13 +1352,13 @@
             });
         };
 
-        window.renderAdminGvDashboard = function() {
+        window.renderAdminGvDashboard = function () {
             const adminGvUsers = appUsers.filter(u => u.role === 'Admin' || u.role === 'GV');
             document.getElementById('total-admin-gv-count').textContent = `Tổng số: ${adminGvUsers.length} tài khoản`;
 
             const tableBody = document.getElementById('admin-gv-table-body');
             tableBody.innerHTML = '';
-            
+
             adminGvUsers.forEach(u => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition';
@@ -1233,7 +1379,7 @@
             });
         };
 
-        window.renderAuditLogs = function() {
+        window.renderAuditLogs = function () {
             const auditContainer = document.getElementById('audit-log-container');
             auditContainer.innerHTML = '';
             if (auditLogs.length === 0) {
@@ -1260,7 +1406,7 @@
             }
         };
 
-        window.renderSecurityLogs = function() {
+        window.renderSecurityLogs = function () {
             const securityContainer = document.getElementById('security-log-container');
             securityContainer.innerHTML = '';
             if (securityLogs.length === 0) {
@@ -1285,7 +1431,7 @@
             }
         };
 
-        window.renderLoginLogs = function() {
+        window.renderLoginLogs = function () {
             const loginContainer = document.getElementById('login-log-container');
             loginContainer.innerHTML = '';
             if (loginLogs.length === 0) {
@@ -1306,7 +1452,7 @@
             }
         };
 
-        window.openPointModal = function(username, type) {
+        window.openPointModal = function (username, type) {
             const user = appUsers.find(u => u.username === username);
             if (!user) return;
 
@@ -1329,7 +1475,7 @@
             document.getElementById('point-modal').classList.remove('hidden');
         };
 
-        window.closePointModal = function() { document.getElementById('point-modal').classList.add('hidden'); };
+        window.closePointModal = function () { document.getElementById('point-modal').classList.add('hidden'); };
 
         document.getElementById('point-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -1371,4 +1517,5 @@
         initSystem();
     </script>
 </body>
+
 </html>
