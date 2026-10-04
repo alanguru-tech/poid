@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google" content="notranslate">
     <title>Hệ Thống Quản Lý Điểm - Firebase Firestore</title>
     <link rel="icon" type="image/png" href="icon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -90,7 +91,7 @@
                     class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🛡
                     Nhật Ký Sửa Đổi</button>
                 <button onclick="switchTab('login-history-view')" id="btn-tab-login"
-                    class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🗝
+                    class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🗝️️
                     Nhật Ký Đăng Nhập</button>
             </aside>
 
@@ -280,7 +281,8 @@
                         <div class="bg-white rounded-xl shadow p-6">
                             <div
                                 class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-                                <h2 class="text-lg font-bold text-slate-700">📋 Danh Sách Thành Viên</h2>
+                                <h2 class="text-lg font-bold text-slate-700">📋 Danh Sách Thành Viên
+                                </h2>
                                 <div class="flex items-center flex-wrap gap-2">
                                     <button id="btn-bulk-edit-score-action" onclick="promptBulkEditScore()"
                                         class="hidden bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow-sm">✏️
@@ -563,11 +565,11 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT TÍCH HỢP FIREBASE FIRESTORE (LẮNG NGHE THỜI GIAN THỰC REAL-TIME) -->
+    <!-- JAVASCRIPT TÍCH HỢP FIREBASE FIRESTORE (ĐỒNG BỘ 4 COLLECTION) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
-        import { getFirestore, collection, onSnapshot, setDoc, doc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAus1TXoMaJ3mJeAxV06c7lnX1USlFnnwk",
@@ -598,16 +600,16 @@
         let selectedUserId = null;
         let parsedExcelData = [];
 
-        // Khởi tạo lắng nghe thời gian thực (Real-time Listeners) cho tất cả các Collection
-        async function initRealtimeListeners() {
-            // 1. Lắng nghe thay đổi collection "users"
-            onSnapshot(collection(db, "users"), (snapshot) => {
+        // Đồng bộ tải dữ liệu từ Firestore (users, auditLogs, securityLogs, loginLogs)
+        async function initSystem() {
+            try {
+                // 1. Tải users
+                const userSnapshot = await getDocs(collection(db, "users"));
                 appUsers = [];
-                snapshot.forEach((docSnap) => {
+                userSnapshot.forEach((docSnap) => {
                     appUsers.push({ id: docSnap.id, ...docSnap.data() });
                 });
 
-                // Kiểm tra nếu chưa có tài khoản admin mặc định thì khởi tạo
                 if (appUsers.length === 0) {
                     const defaultAdmin = {
                         name: "Quản Trị Viên",
@@ -617,52 +619,43 @@
                         permissions: ["xem_diem", "cong_tru_diem", "quan_ly_user", "xem_nhat_ky"],
                         score: 150
                     };
-                    setDoc(doc(db, "users", "admin"), defaultAdmin);
+                    await setDoc(doc(db, "users", "admin"), defaultAdmin);
+                    appUsers.push({ id: "admin", ...defaultAdmin });
+                } else {
+                    let adminUser = appUsers.find(u => u.username === 'admin');
+                    if (adminUser) {
+                        adminUser.role = "Admin";
+                        adminUser.permissions = ["xem_diem", "cong_tru_diem", "quan_ly_user", "xem_nhat_ky"];
+                        await setDoc(doc(db, "users", adminUser.id || 'admin'), adminUser);
+                    }
                 }
 
-                checkAuthState();
-            });
-
-            // 2. Lắng nghe thay đổi collection "auditLogs"
-            onSnapshot(collection(db, "auditLogs"), (snapshot) => {
+                // 2. Tải auditLogs
+                const auditSnapshot = await getDocs(collection(db, "auditLogs"));
                 auditLogs = [];
-                snapshot.forEach((docSnap) => {
+                auditSnapshot.forEach((docSnap) => {
                     auditLogs.push({ id: docSnap.id, ...docSnap.data() });
                 });
-                // Làm mới lại giao diện nhật ký điểm nếu đang mở
-                if (currentUser) {
-                    renderDashboard();
-                    renderAdminGvDashboard();
-                    if (!document.getElementById('audit-history-view').classList.contains('hidden')) {
-                        renderAuditLogs();
-                    }
-                    if (!document.getElementById('profile-view').classList.contains('hidden')) {
-                        renderProfileView();
-                    }
-                }
-            });
 
-            // 3. Lắng nghe thay đổi collection "securityLogs"
-            onSnapshot(collection(db, "securityLogs"), (snapshot) => {
+                // 3. Tải securityLogs
+                const securitySnapshot = await getDocs(collection(db, "securityLogs"));
                 securityLogs = [];
-                snapshot.forEach((docSnap) => {
+                securitySnapshot.forEach((docSnap) => {
                     securityLogs.push({ id: docSnap.id, ...docSnap.data() });
                 });
-                if (currentUser && !document.getElementById('security-history-view').classList.contains('hidden')) {
-                    renderSecurityLogs();
-                }
-            });
 
-            // 4. Lắng nghe thay đổi collection "loginLogs"
-            onSnapshot(collection(db, "loginLogs"), (snapshot) => {
+                // 4. Tải loginLogs
+                const loginSnapshot = await getDocs(collection(db, "loginLogs"));
                 loginLogs = [];
-                snapshot.forEach((docSnap) => {
+                loginSnapshot.forEach((docSnap) => {
                     loginLogs.push({ id: docSnap.id, ...docSnap.data() });
                 });
-                if (currentUser && !document.getElementById('login-history-view').classList.contains('hidden')) {
-                    renderLoginLogs();
-                }
-            });
+
+            } catch (error) {
+                console.error("Lỗi khi tải dữ liệu từ Firestore:", error);
+            }
+
+            checkAuthState();
         }
 
         window.goToHome = function () {
@@ -815,21 +808,26 @@
                         score: item.point
                     };
                     await setDoc(doc(db, "users", item.username), newUserData);
+                    appUsers.push({ id: item.username, ...newUserData });
                     addedCount++;
                 }
             }
 
-            await addDoc(collection(db, "securityLogs"), {
+            // Đẩy securityLog lên Firestore
+            const newSecurityLog = {
                 action: `Tạo hàng loạt ${addedCount} tài khoản từ Excel`,
                 targetName: `Danh sách (${addedCount} người)`,
                 performedBy: currentUser.name,
                 ip: clientIP,
                 time: timeStr
-            });
+            };
+            const docRef = await addDoc(collection(db, "securityLogs"), newSecurityLog);
+            securityLogs.push({ id: docRef.id, ...newSecurityLog });
 
             document.getElementById('excel-file-input').value = '';
             document.getElementById('bulk-preview-container').classList.add('hidden');
             parsedExcelData = [];
+            renderDashboard();
             switchCreationMode('single');
             showPermissionModal(`Đã tạo thành công ${addedCount} tài khoản từ file Excel lên Firestore!`);
         };
@@ -873,13 +871,15 @@
 
                 const now = new Date();
                 const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
-                await addDoc(collection(db, "securityLogs"), {
+                const newSecurityLog = {
                     action: 'Đổi mật khẩu cá nhân',
                     targetName: currentUser.name,
                     performedBy: currentUser.name + ' (Tự đổi)',
                     ip: clientIP,
                     time: timeStr
-                });
+                };
+                const docRef = await addDoc(collection(db, "securityLogs"), newSecurityLog);
+                securityLogs.push({ id: docRef.id, ...newSecurityLog });
 
                 showPermissionModal('Đổi mật khẩu thành công!');
                 closePasswordModal();
@@ -1002,12 +1002,14 @@
 
                 const now = new Date();
                 const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
-                await addDoc(collection(db, "loginLogs"), {
+                const newLoginLog = {
                     name: found.name,
                     username: found.username,
                     ip: clientIP,
                     time: timeStr
-                });
+                };
+                const docRef = await addDoc(collection(db, "loginLogs"), newLoginLog);
+                loginLogs.push({ id: docRef.id, ...newLoginLog });
 
                 checkAuthState();
             } else {
@@ -1053,16 +1055,21 @@
             };
 
             await setDoc(doc(db, "users", username), newUserData);
+            appUsers.push({ id: username, ...newUserData });
 
-            await addDoc(collection(db, "securityLogs"), {
+            const newSecurityLog = {
                 action: 'Tạo tài khoản mới',
                 targetName: name,
                 performedBy: currentUser.name,
                 ip: clientIP,
                 time: timeStr
-            });
+            };
+            const docRef = await addDoc(collection(db, "securityLogs"), newSecurityLog);
+            securityLogs.push({ id: docRef.id, ...newSecurityLog });
 
             document.getElementById('add-user-form').reset();
+            renderDashboard();
+            renderAdminGvDashboard();
             showPermissionModal('Tạo tài khoản và phân quyền thành công trên Firestore!');
         });
 
@@ -1121,19 +1128,30 @@
                     await deleteDoc(doc(db, "users", oldUsername));
                 }
 
+                appUsers[userIndex].name = name;
+                appUsers[userIndex].username = username;
+                appUsers[userIndex].password = password;
+                appUsers[userIndex].role = role;
+                appUsers[userIndex].permissions = permissions;
+                appUsers[userIndex].id = username;
+
                 await setDoc(doc(db, "users", username), {
                     name, username, password, role, permissions, score: appUsers[userIndex].score
                 });
 
-                await addDoc(collection(db, "securityLogs"), {
+                const newSecurityLog = {
                     action: 'Chỉnh sửa tài khoản',
                     targetName: name,
                     performedBy: currentUser.name,
                     ip: clientIP,
                     time: timeStr
-                });
+                };
+                const docRef = await addDoc(collection(db, "securityLogs"), newSecurityLog);
+                securityLogs.push({ id: docRef.id, ...newSecurityLog });
 
                 closeEditUserModal();
+                renderDashboard();
+                renderAdminGvDashboard();
                 showPermissionModal('Cập nhật tài khoản thành công!');
             }
         });
@@ -1211,18 +1229,24 @@
                 }
             }
 
-            await addDoc(collection(db, "securityLogs"), {
+            appUsers = appUsers.filter(u => !idsToDelete.includes(u.id?.toString()) && !idsToDelete.includes(u.username));
+
+            const newSecurityLog = {
                 action: `Xóa hàng loạt ${idsToDelete.length} tài khoản`,
                 targetName: deletedNames.join(', '),
                 performedBy: currentUser.name,
                 ip: clientIP,
                 time: timeStr
-            });
+            };
+            const docRef = await addDoc(collection(db, "securityLogs"), newSecurityLog);
+            securityLogs.push({ id: docRef.id, ...newSecurityLog });
 
             document.getElementById('delete-confirmation-gui').classList.add('hidden');
             document.getElementById('select-all-checkbox').checked = false;
             updateBulkActionButtonsState();
 
+            renderDashboard();
+            renderAdminGvDashboard();
             showPermissionModal(`Đã xóa thành công ${idsToDelete.length} tài khoản khỏi Firestore!`);
         };
 
@@ -1269,7 +1293,7 @@
 
                     await setDoc(doc(db, "users", user.username), user);
 
-                    await addDoc(collection(db, "auditLogs"), {
+                    const newAuditLog = {
                         type: actionType === 'minus' ? 'minus' : 'plus',
                         targetName: user.name,
                         points: actionType === 'set' ? Math.abs(user.score - oldScore) : val,
@@ -1277,7 +1301,9 @@
                         performedBy: currentUser.name,
                         ip: clientIP,
                         time: timeStr
-                    });
+                    };
+                    const docRef = await addDoc(collection(db, "auditLogs"), newAuditLog);
+                    auditLogs.push({ id: docRef.id, ...newAuditLog });
                 }
             }
 
@@ -1286,6 +1312,8 @@
             document.getElementById('select-all-checkbox').checked = false;
             updateBulkActionButtonsState();
 
+            renderDashboard();
+            renderAdminGvDashboard();
             showPermissionModal(`Đã cập nhật điểm thành công cho ${idsToEdit.length} tài khoản trên Firestore!`);
         };
 
@@ -1466,7 +1494,7 @@
 
                 const now = new Date();
                 const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
-                await addDoc(collection(db, "auditLogs"), {
+                const newAuditLog = {
                     type: type,
                     targetName: target.name,
                     points: points,
@@ -1474,16 +1502,20 @@
                     performedBy: currentUser.name,
                     ip: clientIP,
                     time: timeStr
-                });
+                };
+                const docRef = await addDoc(collection(db, "auditLogs"), newAuditLog);
+                auditLogs.push({ id: docRef.id, ...newAuditLog });
 
                 closePointModal();
                 document.getElementById('point-form').reset();
+                renderDashboard();
+                renderAdminGvDashboard();
                 showPermissionModal(type === 'plus' ? 'Cộng điểm thành viên thành công trên Firestore!' : 'Trừ điểm thành viên thành công trên Firestore!');
             }
         });
 
-        // Khởi chạy các trình lắng nghe thời gian thực khi trang mở
-        initRealtimeListeners();
+        // Khởi chạy hệ thống lúc đầu
+        initSystem();
     </script>
 </body>
 
