@@ -568,11 +568,11 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT TÍCH HỢP FIREBASE FIRESTORE & MÃ HÓA MẬT KHẨU SHA-256 -->
+    <!-- JAVASCRIPT TÍCH HỢP FIREBASE FIRESTORE & THỜI GIAN THỰC (REAL-TIME ONSNAPSHOT) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
-        import { getFirestore, collection, getDocs, setDoc, doc, getDoc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, setDoc, doc, getDoc, deleteDoc, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAus1TXoMaJ3mJeAxV06c7lnX1USlFnnwk",
@@ -604,88 +604,113 @@
         let parsedExcelData = [];
 
         async function hashPassword(password) {
-        // Hàm mã hóa SHA-256 tương thích qua TextEncoder và SubtleCrypto khi hỗ trợ,
-        // hoặc dùng hàm chuyển đổi an toàn tránh lỗi Secure Context trên IP/Domain riêng.
-        try {
-            const msgUint8 = new TextEncoder().encode(password);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        } catch (e) {
-            // Dự phòng trường hợp trình duyệt chặn hoàn toàn trên domain không bảo mật:
-            // Sử dụng thuật toán băm đơn giản để hệ thống vẫn chạy ổn định
-            let hash = 0;
-            for (let i = 0; i < password.length; i++) {
-                hash = ((hash << 5) - hash) + password.charCodeAt(i);
-                hash |= 0;
-            }
-            return "fallback_" + Math.abs(hash).toString(16);
-        }
-}
-
-        async function initSystem() {
             try {
-                // 1. Tải danh sách users từ Firebase Firestore
-                const userSnapshot = await getDocs(collection(db, "users"));
-                appUsers = [];
-                userSnapshot.forEach((docSnap) => {
-                    appUsers.push({ id: docSnap.id, ...docSnap.data() });
-                });
-
-                if (appUsers.length === 0) {
-                    const hashedDefaultPass = await hashPassword("123");
-                    const defaultAdmin = {
-                        name: "Quản Trị Viên",
-                        username: "admin",
-                        password: hashedDefaultPass,
-                        role: "Admin",
-                        permissions: ["xem_diem", "cong_tru_diem", "quan_ly_user", "xem_nhat_ky"],
-                        score: 150
-                    };
-                    await setDoc(doc(db, "users", "admin"), defaultAdmin);
-                    appUsers.push({ id: "admin", ...defaultAdmin });
-                } else {
-                    let adminUser = appUsers.find(u => u.username === 'admin');
-                    if (adminUser) {
-                        adminUser.role = "Admin";
-                        adminUser.permissions = ["xem_diem", "cong_tru_diem", "quan_ly_user", "xem_nhat_ky"];
-                        // Đảm bảo admin có mật khẩu băm nếu chưa có
-                        if (adminUser.password === "123") {
-                            adminUser.password = await hashPassword("123");
-                        }
-                        await setDoc(doc(db, "users", adminUser.id || 'admin'), adminUser);
-                    }
+                const msgUint8 = new TextEncoder().encode(password);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            } catch (e) {
+                let hash = 0;
+                for (let i = 0; i < password.length; i++) {
+                    hash = ((hash << 5) - hash) + password.charCodeAt(i);
+                    hash |= 0;
                 }
+                return "fallback_" + Math.abs(hash).toString(16);
+            }
+        }
 
-                // 2. Tải auditLogs trực tiếp từ Firebase
-                const auditSnapshot = await getDocs(collection(db, "auditLogs"));
-                auditLogs = [];
-                auditSnapshot.forEach((docSnap) => {
-                    auditLogs.push({ id: docSnap.id, ...docSnap.data() });
+        function initSystem() {
+            try {
+                // 1. Lắng nghe thay đổi bảng users theo thời gian thực (Real-time)
+                onSnapshot(collection(db, "users"), async (userSnapshot) => {
+                    appUsers = [];
+                    userSnapshot.forEach((docSnap) => {
+                        appUsers.push({ id: docSnap.id, ...docSnap.data() });
+                    });
+
+                    if (appUsers.length === 0) {
+                        const hashedDefaultPass = await hashPassword("123");
+                        const defaultAdmin = {
+                            name: "Quản Trị Viên",
+                            username: "admin",
+                            password: hashedDefaultPass,
+                            role: "Admin",
+                            permissions: ["xem_diem", "cong_tru_diem", "quan_ly_user", "xem_nhat_ky"],
+                            score: 150
+                        };
+                        await setDoc(doc(db, "users", "admin"), defaultAdmin);
+                    } else {
+                        let adminUser = appUsers.find(u => u.username === 'admin');
+                        if (adminUser) {
+                            let updated = false;
+                            if (adminUser.role !== "Admin") { adminUser.role = "Admin"; updated = true; }
+                            if (!adminUser.permissions || adminUser.permissions.length === 0) {
+                                adminUser.permissions = ["xem_diem", "cong_tru_diem", "quan_ly_user", "xem_nhat_ky"];
+                                updated = true;
+                            }
+                            if (adminUser.password === "123") {
+                                adminUser.password = await hashPassword("123");
+                                updated = true;
+                            }
+                            if (updated) {
+                                await setDoc(doc(db, "users", adminUser.id || 'admin'), adminUser);
+                            }
+                        }
+                    }
+
+                    if (currentUser) {
+                        const updatedCurrent = appUsers.find(u => u.username === currentUser.username || u.id === currentUser.id);
+                        if (updatedCurrent) {
+                            currentUser = updatedCurrent;
+                            document.getElementById('user-fullname').textContent = currentUser.name;
+                        }
+                    }
+
+                    checkAuthState();
                 });
 
-                // 3. Tải securityLogs trực tiếp từ Firebase
-                const securitySnapshot = await getDocs(collection(db, "securityLogs"));
-                securityLogs = [];
-                securitySnapshot.forEach((docSnap) => {
-                    securityLogs.push({ id: docSnap.id, ...docSnap.data() });
+                // 2. Lắng nghe thay đổi nhật ký điểm auditLogs theo thời gian thực
+                onSnapshot(collection(db, "auditLogs"), (auditSnapshot) => {
+                    auditLogs = [];
+                    auditSnapshot.forEach((docSnap) => {
+                        auditLogs.push({ id: docSnap.id, ...docSnap.data() });
+                    });
+                    if (currentUser) {
+                        if (!document.getElementById('audit-history-view').classList.contains('hidden')) {
+                            renderAuditLogs();
+                        }
+                        if (!document.getElementById('profile-view').classList.contains('hidden')) {
+                            renderProfileView();
+                        }
+                    }
                 });
 
-                // 4. Tải loginLogs trực tiếp từ Firebase
-                const loginSnapshot = await getDocs(collection(db, "loginLogs"));
-                loginLogs = [];
-                loginSnapshot.forEach((docSnap) => {
-                    loginLogs.push({ id: docSnap.id, ...docSnap.data() });
+                // 3. Lắng nghe thay đổi nhật ký bảo mật securityLogs theo thời gian thực
+                onSnapshot(collection(db, "securityLogs"), (securitySnapshot) => {
+                    securityLogs = [];
+                    securitySnapshot.forEach((docSnap) => {
+                        securityLogs.push({ id: docSnap.id, ...docSnap.data() });
+                    });
+                    if (currentUser && !document.getElementById('security-history-view').classList.contains('hidden')) {
+                        renderSecurityLogs();
+                    }
+                });
+
+                // 4. Lắng nghe thay đổi nhật ký đăng nhập loginLogs theo thời gian thực
+                onSnapshot(collection(db, "loginLogs"), (loginSnapshot) => {
+                    loginLogs = [];
+                    loginSnapshot.forEach((docSnap) => {
+                        loginLogs.push({ id: docSnap.id, ...docSnap.data() });
+                    });
+                    if (currentUser && !document.getElementById('login-history-view').classList.contains('hidden')) {
+                        renderLoginLogs();
+                    }
                 });
 
             } catch (error) {
-                console.error("Lỗi khi tải dữ liệu từ Firestore:", error);
-                showPermissionModal("Không thể kết nối đến cơ sở dữ liệu để xác thực!");
+                console.error("Lỗi khi kết nối thời gian thực với Firestore:", error);
+                showPermissionModal("Không thể kết nối đến cơ sở dữ liệu thời gian thực!");
             }
-
-            currentUser = null;
-            localStorage.clear();
-            checkAuthState();
         }
 
         window.goToHome = function () {
@@ -758,7 +783,6 @@
 
                 renderDashboard();
             } else {
-                localStorage.clear();
                 loginScreen.classList.remove('hidden');
                 mainApp.classList.add('hidden');
                 mainApp.classList.remove('flex');
@@ -824,7 +848,6 @@
 
             for (const item of parsedExcelData) {
                 if (!appUsers.some(u => u.username === item.username)) {
-                    // Mã hóa mật khẩu từ excel trước khi lưu
                     const hashedPassword = await hashPassword(item.password);
                     const newUserData = {
                         name: item.name,
@@ -835,7 +858,6 @@
                         score: item.point
                     };
                     await setDoc(doc(db, "users", item.username), newUserData);
-                    appUsers.push({ id: item.username, ...newUserData });
                     addedCount++;
                 }
             }
@@ -847,13 +869,11 @@
                 ip: clientIP,
                 time: timeStr
             };
-            const docRef = await addDoc(collection(db, "securityLogs"), newSecurityLog);
-            securityLogs.push({ id: docRef.id, ...newSecurityLog });
+            await addDoc(collection(db, "securityLogs"), newSecurityLog);
 
             document.getElementById('excel-file-input').value = '';
             document.getElementById('bulk-preview-container').classList.add('hidden');
             parsedExcelData = [];
-            renderDashboard();
             switchCreationMode('single');
             showPermissionModal(`Đã tạo thành công ${addedCount} tài khoản từ file Excel lên Firestore!`);
         };
@@ -877,7 +897,7 @@
             }
         };
 
-        // ĐỔI MẬT KHẨU CÁ NHÂN (CÓ MÃ HÓA)
+        // ĐỔI MẬT KHẨU CÁ NHÂN
         document.getElementById('change-password-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const oldPass = document.getElementById('old-password').value.trim();
@@ -905,8 +925,7 @@
                     ip: clientIP,
                     time: timeStr
                 };
-                const docRef = await addDoc(collection(db, "securityLogs"), newSecurityLog);
-                securityLogs.push({ id: docRef.id, ...newSecurityLog });
+                await addDoc(collection(db, "securityLogs"), newSecurityLog);
 
                 closePasswordModal();
                 showPermissionModal('Đổi mật khẩu thành công! Hệ thống sẽ tự động đăng xuất.');
@@ -1018,11 +1037,9 @@
             }
         }
 
-        // ĐĂNG NHẬP (MÃ HÓA MẬT KHẨU ĐỂ SO SÁNH)
+        // ĐĂNG NHẬP
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            localStorage.clear();
-
             const u = document.getElementById('login-username').value.trim();
             const rawPassword = document.getElementById('login-password').value.trim();
             const p = await hashPassword(rawPassword);
@@ -1036,7 +1053,6 @@
 
                     if (found.password === p) {
                         currentUser = found;
-                        localStorage.setItem('currentUser', JSON.stringify({ username: currentUser.username }));
 
                         const now = new Date();
                         const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
@@ -1046,8 +1062,7 @@
                             ip: clientIP,
                             time: timeStr
                         };
-                        const docRef = await addDoc(collection(db, "loginLogs"), newLoginLog);
-                        loginLogs.push({ id: docRef.id, ...newLoginLog });
+                        await addDoc(collection(db, "loginLogs"), newLoginLog);
 
                         checkAuthState();
                     } else {
@@ -1063,12 +1078,11 @@
         });
 
         window.logout = function () {
-            localStorage.clear();
             currentUser = null;
             checkAuthState();
         };
 
-        // THÊM TÀI KHOẢN ĐƠN (CÓ MÃ HÓA)
+        // THÊM TÀI KHOẢN ĐƠN
         document.getElementById('add-user-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('new-name').value.trim();
@@ -1102,7 +1116,6 @@
             };
 
             await setDoc(doc(db, "users", username), newUserData);
-            appUsers.push({ id: username, ...newUserData });
 
             const newSecurityLog = {
                 action: 'Tạo tài khoản mới',
@@ -1111,12 +1124,9 @@
                 ip: clientIP,
                 time: timeStr
             };
-            const docRef = await addDoc(collection(db, "securityLogs"), newSecurityLog);
-            securityLogs.push({ id: docRef.id, ...newSecurityLog });
+            await addDoc(collection(db, "securityLogs"), newSecurityLog);
 
             document.getElementById('add-user-form').reset();
-            renderDashboard();
-            renderAdminGvDashboard();
             showPermissionModal('Tạo tài khoản và phân quyền thành công trên Firestore!');
         });
 
@@ -1132,7 +1142,7 @@
             document.getElementById('modal-editing-user-id').value = user.id || user.username;
             document.getElementById('modal-new-name').value = user.name;
             document.getElementById('modal-new-username').value = user.username;
-            document.getElementById('modal-new-password').value = ""; // Để trống hoặc giữ nguyên mật khẩu cũ nếu muốn, ở đây để trống để người nhập nhập lại hoặc tùy chỉnh
+            document.getElementById('modal-new-password').value = "";
             document.getElementById('modal-new-role').value = user.role || 'Thành Viên';
 
             const checkboxes = document.querySelectorAll('input[name="modal-permission"]');
@@ -1149,7 +1159,7 @@
             document.getElementById('modal-edit-user-form').reset();
         };
 
-        // LƯU CHỈNH SỬA TÀI KHOẢN (CÓ MÃ HÓA MẬT KHẨU NẾU THAY ĐỔI)
+        // LƯU CHỈNH SỬA TÀI KHOẢN
         document.getElementById('modal-edit-user-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const editingId = document.getElementById('modal-editing-user-id').value;
@@ -1176,18 +1186,10 @@
                     await deleteDoc(doc(db, "users", oldUsername));
                 }
 
-                // Nếu có nhập mật khẩu mới thì mã hóa, nếu để trống thì giữ nguyên mật khẩu cũ
                 let finalPassword = appUsers[userIndex].password;
                 if (rawPassword) {
                     finalPassword = await hashPassword(rawPassword);
                 }
-
-                appUsers[userIndex].name = name;
-                appUsers[userIndex].username = username;
-                appUsers[userIndex].password = finalPassword;
-                appUsers[userIndex].role = role;
-                appUsers[userIndex].permissions = permissions;
-                appUsers[userIndex].id = username;
 
                 await setDoc(doc(db, "users", username), {
                     name, username, password: finalPassword, role, permissions, score: appUsers[userIndex].score
@@ -1200,12 +1202,9 @@
                     ip: clientIP,
                     time: timeStr
                 };
-                const docRef = await addDoc(collection(db, "securityLogs"), newSecurityLog);
-                securityLogs.push({ id: docRef.id, ...newSecurityLog });
+                await addDoc(collection(db, "securityLogs"), newSecurityLog);
 
                 closeEditUserModal();
-                renderDashboard();
-                renderAdminGvDashboard();
                 showPermissionModal('Cập nhật tài khoản thành công!');
             }
         });
@@ -1283,8 +1282,6 @@
                 }
             }
 
-            appUsers = appUsers.filter(u => !idsToDelete.includes(u.id?.toString()) && !idsToDelete.includes(u.username));
-
             const newSecurityLog = {
                 action: `Xóa hàng loạt ${idsToDelete.length} tài khoản`,
                 targetName: deletedNames.join(', '),
@@ -1292,15 +1289,12 @@
                 ip: clientIP,
                 time: timeStr
             };
-            const docRef = await addDoc(collection(db, "securityLogs"), newSecurityLog);
-            securityLogs.push({ id: docRef.id, ...newSecurityLog });
+            await addDoc(collection(db, "securityLogs"), newSecurityLog);
 
             document.getElementById('delete-confirmation-gui').classList.add('hidden');
             document.getElementById('select-all-checkbox').checked = false;
             updateBulkActionButtonsState();
 
-            renderDashboard();
-            renderAdminGvDashboard();
             showPermissionModal(`Đã xóa thành công ${idsToDelete.length} tài khoản khỏi Firestore!`);
         };
 
@@ -1356,8 +1350,7 @@
                         ip: clientIP,
                         time: timeStr
                     };
-                    const docRef = await addDoc(collection(db, "auditLogs"), newAuditLog);
-                    auditLogs.push({ id: docRef.id, ...newAuditLog });
+                    await addDoc(collection(db, "auditLogs"), newAuditLog);
                 }
             }
 
@@ -1366,8 +1359,6 @@
             document.getElementById('select-all-checkbox').checked = false;
             updateBulkActionButtonsState();
 
-            renderDashboard();
-            renderAdminGvDashboard();
             showPermissionModal(`Đã cập nhật điểm thành công cho ${idsToEdit.length} tài khoản trên Firestore!`);
         };
 
@@ -1557,13 +1548,10 @@
                     ip: clientIP,
                     time: timeStr
                 };
-                const docRef = await addDoc(collection(db, "auditLogs"), newAuditLog);
-                auditLogs.push({ id: docRef.id, ...newAuditLog });
+                await addDoc(collection(db, "auditLogs"), newAuditLog);
 
                 closePointModal();
                 document.getElementById('point-form').reset();
-                renderDashboard();
-                renderAdminGvDashboard();
                 showPermissionModal(type === 'plus' ? 'Cộng điểm thành viên thành công trên Firestore!' : 'Trừ điểm thành viên thành công trên Firestore!');
             }
         });
