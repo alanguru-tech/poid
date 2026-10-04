@@ -55,7 +55,8 @@
                             <span>Xin chào, <span id="user-fullname" class="underline"></span></span>
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
                         <div id="user-dropdown-menu"
@@ -571,7 +572,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
-        import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, setDoc, doc, getDoc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAus1TXoMaJ3mJeAxV06c7lnX1USlFnnwk",
@@ -598,14 +599,13 @@
         let securityLogs = [];
         let loginLogs = [];
 
-        // ĐẢM BẢO BẢO MẬT: Không bao giờ tin tưởng hoàn toàn dữ liệu thô localStorage, phải đối chiếu với Firebase
         let currentUser = null;
         let selectedUserId = null;
         let parsedExcelData = [];
 
         async function initSystem() {
             try {
-                // 1. Tải users trực tiếp từ Firebase
+                // 1. Tải danh sách users từ Firebase Firestore
                 const userSnapshot = await getDocs(collection(db, "users"));
                 appUsers = [];
                 userSnapshot.forEach((docSnap) => {
@@ -657,19 +657,11 @@
                 console.error("Lỗi khi tải dữ liệu từ Firestore:", error);
             }
 
-            // Kiểm tra xem LocalStorage có lưu phiên cũ không, nhưng bắt buộc xác thực với dữ liệu mới tải từ Firestore
-            const cachedUser = JSON.parse(localStorage.getItem('currentUser'));
-            if (cachedUser) {
-                const verifiedUser = appUsers.find(u => u.username === cachedUser.username && u.password === cachedUser.password);
-                if (verifiedUser) {
-                    currentUser = verifiedUser;
-                } else {
-                    // Dữ liệu LocalStorage không khớp hoặc không hợp lệ -> Xóa sạch
-                    localStorage.clear();
-                    currentUser = null;
-                }
-            }
+            // KHÔNG ĐỌC LOCALSTORAGE NỮA -> currentUser luôn là null khi mới mở trang
+            currentUser = null;
+            localStorage.clear();
 
+            // Gọi hàm kiểm tra trạng thái để hiển thị màn hình đăng nhập
             checkAuthState();
         }
 
@@ -723,18 +715,6 @@
             const mainApp = document.getElementById('main-app');
 
             if (currentUser) {
-                const latestUser = appUsers.find(u => u.id === currentUser.id || u.username === currentUser.username);
-                
-                // Kiểm tra bảo mật: Nếu mật khẩu thay đổi hoặc tài khoản không tồn tại, tự động đăng xuất và xóa localStorage
-                if (!latestUser || latestUser.password !== currentUser.password) {
-                    logout();
-                    return;
-                }
-
-                currentUser = latestUser;
-                // Chỉ lưu thông tin tối thiểu phiên làm việc sau khi đã xác thực từ Firebase
-                localStorage.setItem('currentUser', JSON.stringify({ username: currentUser.username, password: currentUser.password }));
-
                 loginScreen.classList.add('hidden');
                 mainApp.classList.remove('hidden');
                 mainApp.classList.add('flex');
@@ -755,7 +735,6 @@
 
                 renderDashboard();
             } else {
-                // BẢO MẬT: Xóa sạch LocalStorage khi chưa đăng nhập
                 localStorage.clear();
                 loginScreen.classList.remove('hidden');
                 mainApp.classList.add('hidden');
@@ -873,7 +852,7 @@
             }
         };
 
-        // YÊU CẦU BẢO MẬT: Sau mỗi lần đổi mật khẩu của tài khoản sẽ tự động đăng xuất và xóa LocalStorage
+        // ĐỔI MẬT KHẨU CÁ NHÂN
         document.getElementById('change-password-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const oldPass = document.getElementById('old-password').value.trim();
@@ -902,9 +881,7 @@
                 securityLogs.push({ id: docRef.id, ...newSecurityLog });
 
                 closePasswordModal();
-                showPermissionModal('Đổi mật khẩu thành công! Hệ thống sẽ tự động đăng xuất và xóa dữ liệu cục bộ.');
-                
-                // Thực hiện đăng xuất và xóa sạch LocalStorage ngay lập tức
+                showPermissionModal('Đổi mật khẩu thành công! Hệ thống sẽ tự động đăng xuất.');
                 logout();
             }
         });
@@ -1013,39 +990,53 @@
             }
         }
 
-        // YÊU CẦU BẢO MẬT: Xóa LocalStorage mỗi lần đăng nhập
+        // BẢO MẬT: GỌI TRỰC TIẾP FIRESTORE KHI BẤM ĐĂNG NHẬP (KHÔNG DÙNG CACHE CŨ)
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            localStorage.clear(); // Xóa sạch bộ nhớ cũ trước khi kiểm tra đăng nhập
+            localStorage.clear();
 
             const u = document.getElementById('login-username').value.trim();
             const p = document.getElementById('login-password').value.trim();
-            const found = appUsers.find(item => item.username === u && item.password === p);
 
-            if (found) {
-                currentUser = found;
-                localStorage.setItem('currentUser', JSON.stringify({ username: currentUser.username, password: currentUser.password }));
+            try {
+                // Truy vấn trực tiếp tài khoản từ Firestore theo tên đăng nhập
+                const userDocRef = doc(db, "users", u);
+                const userDocSnap = await getDoc(userDocRef);
 
-                const now = new Date();
-                const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
-                const newLoginLog = {
-                    name: found.name,
-                    username: found.username,
-                    ip: clientIP,
-                    time: timeStr
-                };
-                const docRef = await addDoc(collection(db, "loginLogs"), newLoginLog);
-                loginLogs.push({ id: docRef.id, ...newLoginLog });
+                if (userDocSnap.exists()) {
+                    const found = { id: userDocSnap.id, ...userDocSnap.data() };
 
-                checkAuthState();
-            } else {
-                showPermissionModal('Sai tên đăng nhập hoặc mật khẩu!');
+                    // So sánh mật khẩu trực tiếp với dữ liệu mới nhất trên Firebase
+                    if (found.password === p) {
+                        currentUser = found;
+                        localStorage.setItem('currentUser', JSON.stringify({ username: currentUser.username, password: currentUser.password }));
+
+                        const now = new Date();
+                        const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
+                        const newLoginLog = {
+                            name: found.name,
+                            username: found.username,
+                            ip: clientIP,
+                            time: timeStr
+                        };
+                        const docRef = await addDoc(collection(db, "loginLogs"), newLoginLog);
+                        loginLogs.push({ id: docRef.id, ...newLoginLog });
+
+                        checkAuthState();
+                    } else {
+                        showPermissionModal('Mật khẩu không chính xác!');
+                    }
+                } else {
+                    showPermissionModal('Tên đăng nhập không tồn tại trên hệ thống!');
+                }
+            } catch (error) {
+                console.error("Lỗi xác thực đăng nhập:", error);
+                showPermissionModal('Không thể kết nối đến cơ sở dữ liệu để xác thực!');
             }
         });
 
-        // YÊU CẦU BẢO MẬT: Xóa LocalStorage mỗi lần đăng xuất
         window.logout = function () {
-            localStorage.clear(); // Xóa sạch hoàn toàn LocalStorage
+            localStorage.clear();
             currentUser = null;
             checkAuthState();
         };
