@@ -568,7 +568,7 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT TÍCH HỢP FIREBASE FIRESTORE & BẢO MẬT LOCALSTORAGE -->
+    <!-- JAVASCRIPT TÍCH HỢP FIREBASE FIRESTORE & MÃ HÓA MẬT KHẨU SHA-256 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
@@ -603,6 +603,16 @@
         let selectedUserId = null;
         let parsedExcelData = [];
 
+        // HÀM MÃ HÓA MẬT KHẨU SHA-256
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+
         async function initSystem() {
             try {
                 // 1. Tải danh sách users từ Firebase Firestore
@@ -613,10 +623,11 @@
                 });
 
                 if (appUsers.length === 0) {
+                    const hashedDefaultPass = await hashPassword("123");
                     const defaultAdmin = {
                         name: "Quản Trị Viên",
                         username: "admin",
-                        password: "123",
+                        password: hashedDefaultPass,
                         role: "Admin",
                         permissions: ["xem_diem", "cong_tru_diem", "quan_ly_user", "xem_nhat_ky"],
                         score: 150
@@ -628,6 +639,10 @@
                     if (adminUser) {
                         adminUser.role = "Admin";
                         adminUser.permissions = ["xem_diem", "cong_tru_diem", "quan_ly_user", "xem_nhat_ky"];
+                        // Đảm bảo admin có mật khẩu băm nếu chưa có
+                        if (adminUser.password === "123") {
+                            adminUser.password = await hashPassword("123");
+                        }
                         await setDoc(doc(db, "users", adminUser.id || 'admin'), adminUser);
                     }
                 }
@@ -655,13 +670,11 @@
 
             } catch (error) {
                 console.error("Lỗi khi tải dữ liệu từ Firestore:", error);
+                showPermissionModal("Không thể kết nối đến cơ sở dữ liệu để xác thực!");
             }
 
-            // KHÔNG ĐỌC LOCALSTORAGE NỮA -> currentUser luôn là null khi mới mở trang
             currentUser = null;
             localStorage.clear();
-
-            // Gọi hàm kiểm tra trạng thái để hiển thị màn hình đăng nhập
             checkAuthState();
         }
 
@@ -768,7 +781,7 @@
                         name: item["name"] || "",
                         username: item["user"] || "",
                         point: parseInt(item["point"]) || 100,
-                        password: item["password"] || "123"
+                        password: item["password"] ? item["password"].toString() : "123"
                     })).filter(u => u.name && u.username);
 
                     if (parsedExcelData.length === 0) {
@@ -801,10 +814,12 @@
 
             for (const item of parsedExcelData) {
                 if (!appUsers.some(u => u.username === item.username)) {
+                    // Mã hóa mật khẩu từ excel trước khi lưu
+                    const hashedPassword = await hashPassword(item.password);
                     const newUserData = {
                         name: item.name,
                         username: item.username,
-                        password: item.password,
+                        password: hashedPassword,
                         role: role,
                         permissions: permissions,
                         score: item.point
@@ -852,20 +867,23 @@
             }
         };
 
-        // ĐỔI MẬT KHẨU CÁ NHÂN
+        // ĐỔI MẬT KHẨU CÁ NHÂN (CÓ MÃ HÓA)
         document.getElementById('change-password-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const oldPass = document.getElementById('old-password').value.trim();
             const newPass = document.getElementById('new-password-user').value.trim();
 
+            const hashedOldPass = await hashPassword(oldPass);
+            const hashedNewPass = await hashPassword(newPass);
+
             let userIndex = appUsers.findIndex(u => u.id === currentUser.id || u.username === currentUser.username);
 
             if (userIndex !== -1) {
-                if (appUsers[userIndex].password !== oldPass) {
+                if (appUsers[userIndex].password !== hashedOldPass) {
                     showPermissionModal('Mật khẩu cũ không chính xác!');
                     return;
                 }
-                appUsers[userIndex].password = newPass;
+                appUsers[userIndex].password = hashedNewPass;
                 await setDoc(doc(db, "users", appUsers[userIndex].id || appUsers[userIndex].username), appUsers[userIndex]);
 
                 const now = new Date();
@@ -990,26 +1008,25 @@
             }
         }
 
-        // BẢO MẬT: GỌI TRỰC TIẾP FIRESTORE KHI BẤM ĐĂNG NHẬP (KHÔNG DÙNG CACHE CŨ)
+        // ĐĂNG NHẬP (MÃ HÓA MẬT KHẨU ĐỂ SO SÁNH)
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             localStorage.clear();
 
             const u = document.getElementById('login-username').value.trim();
-            const p = document.getElementById('login-password').value.trim();
+            const rawPassword = document.getElementById('login-password').value.trim();
+            const p = await hashPassword(rawPassword);
 
             try {
-                // Truy vấn trực tiếp tài khoản từ Firestore theo tên đăng nhập
                 const userDocRef = doc(db, "users", u);
                 const userDocSnap = await getDoc(userDocRef);
 
                 if (userDocSnap.exists()) {
                     const found = { id: userDocSnap.id, ...userDocSnap.data() };
 
-                    // So sánh mật khẩu trực tiếp với dữ liệu mới nhất trên Firebase
                     if (found.password === p) {
                         currentUser = found;
-                        localStorage.setItem('currentUser', JSON.stringify({ username: currentUser.username, password: currentUser.password }));
+                        localStorage.setItem('currentUser', JSON.stringify({ username: currentUser.username }));
 
                         const now = new Date();
                         const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
@@ -1041,11 +1058,12 @@
             checkAuthState();
         };
 
+        // THÊM TÀI KHOẢN ĐƠN (CÓ MÃ HÓA)
         document.getElementById('add-user-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('new-name').value.trim();
             const username = document.getElementById('new-username').value.trim();
-            const password = document.getElementById('new-password').value.trim();
+            const rawPassword = document.getElementById('new-password').value.trim();
             const role = document.getElementById('new-role').value;
 
             const checkboxes = document.querySelectorAll('input[name="permission"]:checked');
@@ -1063,10 +1081,11 @@
                 return;
             }
 
+            const hashedPassword = await hashPassword(rawPassword);
             const newUserData = {
                 name,
                 username,
-                password,
+                password: hashedPassword,
                 role,
                 permissions,
                 score: 100
@@ -1103,7 +1122,7 @@
             document.getElementById('modal-editing-user-id').value = user.id || user.username;
             document.getElementById('modal-new-name').value = user.name;
             document.getElementById('modal-new-username').value = user.username;
-            document.getElementById('modal-new-password').value = user.password;
+            document.getElementById('modal-new-password').value = ""; // Để trống hoặc giữ nguyên mật khẩu cũ nếu muốn, ở đây để trống để người nhập nhập lại hoặc tùy chỉnh
             document.getElementById('modal-new-role').value = user.role || 'Thành Viên';
 
             const checkboxes = document.querySelectorAll('input[name="modal-permission"]');
@@ -1120,12 +1139,13 @@
             document.getElementById('modal-edit-user-form').reset();
         };
 
+        // LƯU CHỈNH SỬA TÀI KHOẢN (CÓ MÃ HÓA MẬT KHẨU NẾU THAY ĐỔI)
         document.getElementById('modal-edit-user-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const editingId = document.getElementById('modal-editing-user-id').value;
             const name = document.getElementById('modal-new-name').value.trim();
             const username = document.getElementById('modal-new-username').value.trim();
-            const password = document.getElementById('modal-new-password').value.trim();
+            const rawPassword = document.getElementById('modal-new-password').value.trim();
             const role = document.getElementById('modal-new-role').value;
 
             const checkboxes = document.querySelectorAll('input[name="modal-permission"]:checked');
@@ -1146,15 +1166,21 @@
                     await deleteDoc(doc(db, "users", oldUsername));
                 }
 
+                // Nếu có nhập mật khẩu mới thì mã hóa, nếu để trống thì giữ nguyên mật khẩu cũ
+                let finalPassword = appUsers[userIndex].password;
+                if (rawPassword) {
+                    finalPassword = await hashPassword(rawPassword);
+                }
+
                 appUsers[userIndex].name = name;
                 appUsers[userIndex].username = username;
-                appUsers[userIndex].password = password;
+                appUsers[userIndex].password = finalPassword;
                 appUsers[userIndex].role = role;
                 appUsers[userIndex].permissions = permissions;
                 appUsers[userIndex].id = username;
 
                 await setDoc(doc(db, "users", username), {
-                    name, username, password, role, permissions, score: appUsers[userIndex].score
+                    name, username, password: finalPassword, role, permissions, score: appUsers[userIndex].score
                 });
 
                 const newSecurityLog = {
