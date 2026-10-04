@@ -48,27 +48,29 @@
                     <img src="gd.png" alt="Logo" class="h-10 object-contain" onerror="this.style.display='none'">
                     <h1 class="text-2xl font-extrabold tracking-wide">Hệ Thống Quản Lý Điểm Nội Bộ</h1>
                 </div>
-                <div class="relative">
-                    <button onclick="toggleUserDropdown(event)"
-                        class="flex items-center gap-2 bg-indigo-700 hover:bg-indigo-800 px-3 py-1.5 rounded-lg text-sm font-semibold transition focus:outline-none">
-                        <span>Xin chào, <span id="user-fullname" class="underline"></span></span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </button>
-                    <div id="user-dropdown-menu"
-                        class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl py-2 z-40 text-slate-800 border border-slate-100">
-                        <button onclick="switchTab('profile-view')"
-                            class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 flex items-center gap-3 transition">Thông
-                            tin tài khoản</button>
-                        <button onclick="openPasswordModal()"
-                            class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 flex items-center gap-3 transition">Đổi
-                            mật khẩu</button>
-                        <div class="border-t border-slate-100 my-1"></div>
-                        <button onclick="logout()"
-                            class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition">Đăng
-                            xuất</button>
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <button onclick="toggleUserDropdown(event)"
+                            class="flex items-center gap-2 bg-indigo-700 hover:bg-indigo-800 px-3 py-1.5 rounded-lg text-sm font-semibold transition focus:outline-none">
+                            <span>Xin chào, <span id="user-fullname" class="underline"></span></span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div id="user-dropdown-menu"
+                            class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl py-2 z-40 text-slate-800 border border-slate-100">
+                            <button onclick="switchTab('profile-view')"
+                                class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 flex items-center gap-3 transition">Thông
+                                tin tài khoản</button>
+                            <button onclick="openPasswordModal()"
+                                class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 flex items-center gap-3 transition">Đổi
+                                mật khẩu</button>
+                            <div class="border-t border-slate-100 my-1"></div>
+                            <button onclick="logout()"
+                                class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition">Đăng
+                                xuất</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -91,7 +93,7 @@
                     class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🛡
                     Nhật Ký Sửa Đổi</button>
                 <button onclick="switchTab('login-history-view')" id="btn-tab-login"
-                    class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🗝️️
+                    class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 transition flex items-center gap-2">🗝
                     Nhật Ký Đăng Nhập</button>
             </aside>
 
@@ -565,7 +567,7 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT TÍCH HỢP FIREBASE FIRESTORE (ĐỒNG BỘ 4 COLLECTION) -->
+    <!-- JAVASCRIPT TÍCH HỢP FIREBASE FIRESTORE & BẢO MẬT LOCALSTORAGE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
@@ -596,14 +598,14 @@
         let securityLogs = [];
         let loginLogs = [];
 
-        let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+        // ĐẢM BẢO BẢO MẬT: Không bao giờ tin tưởng hoàn toàn dữ liệu thô localStorage, phải đối chiếu với Firebase
+        let currentUser = null;
         let selectedUserId = null;
         let parsedExcelData = [];
 
-        // Đồng bộ tải dữ liệu từ Firestore (users, auditLogs, securityLogs, loginLogs)
         async function initSystem() {
             try {
-                // 1. Tải users
+                // 1. Tải users trực tiếp từ Firebase
                 const userSnapshot = await getDocs(collection(db, "users"));
                 appUsers = [];
                 userSnapshot.forEach((docSnap) => {
@@ -630,21 +632,21 @@
                     }
                 }
 
-                // 2. Tải auditLogs
+                // 2. Tải auditLogs trực tiếp từ Firebase
                 const auditSnapshot = await getDocs(collection(db, "auditLogs"));
                 auditLogs = [];
                 auditSnapshot.forEach((docSnap) => {
                     auditLogs.push({ id: docSnap.id, ...docSnap.data() });
                 });
 
-                // 3. Tải securityLogs
+                // 3. Tải securityLogs trực tiếp từ Firebase
                 const securitySnapshot = await getDocs(collection(db, "securityLogs"));
                 securityLogs = [];
                 securitySnapshot.forEach((docSnap) => {
                     securityLogs.push({ id: docSnap.id, ...docSnap.data() });
                 });
 
-                // 4. Tải loginLogs
+                // 4. Tải loginLogs trực tiếp từ Firebase
                 const loginSnapshot = await getDocs(collection(db, "loginLogs"));
                 loginLogs = [];
                 loginSnapshot.forEach((docSnap) => {
@@ -653,6 +655,19 @@
 
             } catch (error) {
                 console.error("Lỗi khi tải dữ liệu từ Firestore:", error);
+            }
+
+            // Kiểm tra xem LocalStorage có lưu phiên cũ không, nhưng bắt buộc xác thực với dữ liệu mới tải từ Firestore
+            const cachedUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (cachedUser) {
+                const verifiedUser = appUsers.find(u => u.username === cachedUser.username && u.password === cachedUser.password);
+                if (verifiedUser) {
+                    currentUser = verifiedUser;
+                } else {
+                    // Dữ liệu LocalStorage không khớp hoặc không hợp lệ -> Xóa sạch
+                    localStorage.clear();
+                    currentUser = null;
+                }
             }
 
             checkAuthState();
@@ -670,7 +685,7 @@
         window.getRoleBadge = function (role) {
             switch (role) {
                 case 'Admin': return `<span class="bg-red-100 text-red-700 px-2.5 py-1 rounded-full text-xs font-bold">🛡 Admin</span>`;
-                case 'GV': return `<span class="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full text-xs font-bold">👨‍🏫 GV</span>`;
+                case 'GV': return `<span class="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full text-xs font-bold">👨‍‍🏫 GV</span>`;
                 case 'BCS': return `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-xs font-bold">⭐ BCS</span>`;
                 default: return `<span class="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-xs font-bold">👤 Thành Viên</span>`;
             }
@@ -709,10 +724,16 @@
 
             if (currentUser) {
                 const latestUser = appUsers.find(u => u.id === currentUser.id || u.username === currentUser.username);
-                if (latestUser) {
-                    currentUser = latestUser;
-                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                
+                // Kiểm tra bảo mật: Nếu mật khẩu thay đổi hoặc tài khoản không tồn tại, tự động đăng xuất và xóa localStorage
+                if (!latestUser || latestUser.password !== currentUser.password) {
+                    logout();
+                    return;
                 }
+
+                currentUser = latestUser;
+                // Chỉ lưu thông tin tối thiểu phiên làm việc sau khi đã xác thực từ Firebase
+                localStorage.setItem('currentUser', JSON.stringify({ username: currentUser.username, password: currentUser.password }));
 
                 loginScreen.classList.add('hidden');
                 mainApp.classList.remove('hidden');
@@ -734,6 +755,8 @@
 
                 renderDashboard();
             } else {
+                // BẢO MẬT: Xóa sạch LocalStorage khi chưa đăng nhập
+                localStorage.clear();
                 loginScreen.classList.remove('hidden');
                 mainApp.classList.add('hidden');
                 mainApp.classList.remove('flex');
@@ -813,7 +836,6 @@
                 }
             }
 
-            // Đẩy securityLog lên Firestore
             const newSecurityLog = {
                 action: `Tạo hàng loạt ${addedCount} tài khoản từ Excel`,
                 targetName: `Danh sách (${addedCount} người)`,
@@ -851,6 +873,7 @@
             }
         };
 
+        // YÊU CẦU BẢO MẬT: Sau mỗi lần đổi mật khẩu của tài khoản sẽ tự động đăng xuất và xóa LocalStorage
         document.getElementById('change-password-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const oldPass = document.getElementById('old-password').value.trim();
@@ -866,9 +889,6 @@
                 appUsers[userIndex].password = newPass;
                 await setDoc(doc(db, "users", appUsers[userIndex].id || appUsers[userIndex].username), appUsers[userIndex]);
 
-                currentUser = appUsers[userIndex];
-                localStorage.setItem('currentUser', JSON.stringify(currentUser));
-
                 const now = new Date();
                 const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
                 const newSecurityLog = {
@@ -881,8 +901,11 @@
                 const docRef = await addDoc(collection(db, "securityLogs"), newSecurityLog);
                 securityLogs.push({ id: docRef.id, ...newSecurityLog });
 
-                showPermissionModal('Đổi mật khẩu thành công!');
                 closePasswordModal();
+                showPermissionModal('Đổi mật khẩu thành công! Hệ thống sẽ tự động đăng xuất và xóa dữ liệu cục bộ.');
+                
+                // Thực hiện đăng xuất và xóa sạch LocalStorage ngay lập tức
+                logout();
             }
         });
 
@@ -990,15 +1013,18 @@
             }
         }
 
+        // YÊU CẦU BẢO MẬT: Xóa LocalStorage mỗi lần đăng nhập
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            localStorage.clear(); // Xóa sạch bộ nhớ cũ trước khi kiểm tra đăng nhập
+
             const u = document.getElementById('login-username').value.trim();
             const p = document.getElementById('login-password').value.trim();
             const found = appUsers.find(item => item.username === u && item.password === p);
 
             if (found) {
                 currentUser = found;
-                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                localStorage.setItem('currentUser', JSON.stringify({ username: currentUser.username, password: currentUser.password }));
 
                 const now = new Date();
                 const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
@@ -1017,9 +1043,10 @@
             }
         });
 
+        // YÊU CẦU BẢO MẬT: Xóa LocalStorage mỗi lần đăng xuất
         window.logout = function () {
+            localStorage.clear(); // Xóa sạch hoàn toàn LocalStorage
             currentUser = null;
-            localStorage.removeItem('currentUser');
             checkAuthState();
         };
 
