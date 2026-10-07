@@ -123,7 +123,7 @@
                                         class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                     <input type="text" id="new-username" placeholder="Tên đăng nhập (user)" required
                                         class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                    <input type="text" id="new-password" placeholder="Mật khẩu (password)" required
+                                    <input type="password" id="new-password" placeholder="Mật khẩu (password)" required
                                         class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 </div>
 
@@ -588,11 +588,8 @@
         const analytics = getAnalytics(app);
         const db = getFirestore(app);
 
-        let clientIP = "192.168.1.50";
-        fetch('https://api64.ipify.org?format=json')
-            .then(response => response.json())
-            .then(data => { clientIP = data.ip; })
-            .catch(() => { clientIP = "127.0.0.1 (Localhost)"; });
+        // Không thu thập IP từ trình duyệt hoặc gửi địa chỉ truy cập cho dịch vụ bên thứ ba.
+        const clientIP = "Không ghi nhận từ trình duyệt";
 
         let appUsers = [];
         let auditLogs = [];
@@ -604,19 +601,13 @@
         let parsedExcelData = [];
 
         async function hashPassword(password) {
-            try {
-                const msgUint8 = new TextEncoder().encode(password);
-                const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-                const hashArray = Array.from(new Uint8Array(hashBuffer));
-                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-            } catch (e) {
-                let hash = 0;
-                for (let i = 0; i < password.length; i++) {
-                    hash = ((hash << 5) - hash) + password.charCodeAt(i);
-                    hash |= 0;
-                }
-                return "fallback_" + Math.abs(hash).toString(16);
+            if (!globalThis.isSecureContext || !globalThis.crypto?.subtle) {
+                throw new Error('Ứng dụng cần được phục vụ qua HTTPS để xử lý xác thực.');
             }
+            const msgUint8 = new TextEncoder().encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
         function initSystem() {
@@ -628,35 +619,8 @@
                         appUsers.push({ id: docSnap.id, ...docSnap.data() });
                     });
 
-                    if (appUsers.length === 0) {
-                        const hashedDefaultPass = await hashPassword("123");
-                        const defaultAdmin = {
-                            name: "Quản Trị Viên",
-                            username: "admin",
-                            password: hashedDefaultPass,
-                            role: "Admin",
-                            permissions: ["xem_diem", "cong_tru_diem", "quan_ly_user", "xem_nhat_ky"],
-                            score: 150
-                        };
-                        await setDoc(doc(db, "users", "admin"), defaultAdmin);
-                    } else {
-                        let adminUser = appUsers.find(u => u.username === 'admin');
-                        if (adminUser) {
-                            let updated = false;
-                            if (adminUser.role !== "Admin") { adminUser.role = "Admin"; updated = true; }
-                            if (!adminUser.permissions || adminUser.permissions.length === 0) {
-                                adminUser.permissions = ["xem_diem", "cong_tru_diem", "quan_ly_user", "xem_nhat_ky"];
-                                updated = true;
-                            }
-                            if (adminUser.password === "123") {
-                                adminUser.password = await hashPassword("123");
-                                updated = true;
-                            }
-                            if (updated) {
-                                await setDoc(doc(db, "users", adminUser.id || 'admin'), adminUser);
-                            }
-                        }
-                    }
+                    // Không tự tạo admin mặc định hoặc tự nâng role từ dữ liệu client.
+                    // Khởi tạo tài khoản cần quy trình quản trị an toàn phía server.
 
                     if (currentUser) {
                         const updatedCurrent = appUsers.find(u => u.username === currentUser.username || u.id === currentUser.id);
@@ -721,6 +685,15 @@
                 switchTab('profile-view');
             }
         };
+
+        // Encode dữ liệu không tin cậy trước khi đưa vào ngữ cảnh HTML.
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"\']/g, ch => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[ch]);
+        }
+        // JSON string literal an toàn cho tham số inline-handler trong HTML attribute.
+        function safeJsArg(value) { return escapeHtml(JSON.stringify(String(value ?? ''))); }
 
         window.getRoleBadge = function (role) {
             switch (role) {
@@ -815,7 +788,7 @@
                         name: item["name"] || "",
                         username: item["user"] || "",
                         point: parseInt(item["point"]) || 100,
-                        password: item["password"] ? item["password"].toString() : "123"
+                        password: item["password"] ? item["password"].toString() : ""
                     })).filter(u => u.name && u.username);
 
                     if (parsedExcelData.length === 0) {
@@ -900,8 +873,8 @@
         // ĐỔI MẬT KHẨU CÁ NHÂN
         document.getElementById('change-password-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const oldPass = document.getElementById('old-password').value.trim();
-            const newPass = document.getElementById('new-password-user').value.trim();
+            const oldPass = document.getElementById('old-password').value;
+            const newPass = document.getElementById('new-password-user').value;
 
             const hashedOldPass = await hashPassword(oldPass);
             const hashedNewPass = await hashPassword(newPass);
@@ -1023,13 +996,13 @@
                     item.className = `bg-slate-50 border-l-4 ${isPlus ? 'border-emerald-500' : 'border-red-500'} border border-slate-200 rounded-lg p-3 space-y-1 text-sm`;
                     item.innerHTML = `
                         <div class="flex justify-between font-semibold text-slate-700">
-                            <span>${isPlus ? 'Cộng điểm' : 'Trừ điểm'}: <strong class="${isPlus ? 'text-emerald-600' : 'text-red-600'}">${isPlus ? '+' : '-'}${log.points}đ</strong></span>
-                            <span class="text-slate-400 font-normal text-xs">${log.time}</span>
+                            <span>${isPlus ? 'Cộng điểm' : 'Trừ điểm'}: <strong class="${isPlus ? 'text-emerald-600' : 'text-red-600'}">${isPlus ? '+' : '-'}${escapeHtml(log.points)}đ</strong></span>
+                            <span class="text-slate-400 font-normal text-xs">${escapeHtml(log.time)}</span>
                         </div>
-                        <p class="text-slate-600"><strong>Lý do:</strong> ${log.reason}</p>
+                        <p class="text-slate-600"><strong>Lý do:</strong> ${escapeHtml(log.reason)}</p>
                         <div class="flex justify-between items-center text-xs pt-1 border-t border-slate-200 mt-2">
-                            <span class="text-indigo-600 font-medium">Thực hiện bởi: ${log.performedBy}</span>
-                            <span class="text-slate-500 font-mono bg-slate-200 px-1.5 py-0.5 rounded">IP: ${log.ip || '127.0.0.1'}</span>
+                            <span class="text-indigo-600 font-medium">Thực hiện bởi: ${escapeHtml(log.performedBy)}</span>
+                            <span class="text-slate-500 font-mono bg-slate-200 px-1.5 py-0.5 rounded">IP: ${escapeHtml(log.ip || '127.0.0.1')}</span>
                         </div>
                     `;
                     container.appendChild(item);
@@ -1041,10 +1014,9 @@
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const u = document.getElementById('login-username').value.trim();
-            const rawPassword = document.getElementById('login-password').value.trim();
-            const p = await hashPassword(rawPassword);
-
+            const rawPassword = document.getElementById('login-password').value;
             try {
+                const p = await hashPassword(rawPassword);
                 const userDocRef = doc(db, "users", u);
                 const userDocSnap = await getDoc(userDocRef);
 
@@ -1087,7 +1059,7 @@
             e.preventDefault();
             const name = document.getElementById('new-name').value.trim();
             const username = document.getElementById('new-username').value.trim();
-            const rawPassword = document.getElementById('new-password').value.trim();
+            const rawPassword = document.getElementById('new-password').value;
             const role = document.getElementById('new-role').value;
 
             const checkboxes = document.querySelectorAll('input[name="permission"]:checked');
@@ -1098,6 +1070,14 @@
 
             if (currentUser.role !== 'Admin') {
                 showPermissionModal('Chỉ tài khoản Quản Trị Viên (Admin) mới có quyền tạo tài khoản mới!');
+                return;
+            }
+            if (!/^[a-zA-Z0-9_.-]{1,64}$/.test(username)) {
+                showPermissionModal('Tên đăng nhập chỉ được gồm chữ không dấu, số, dấu chấm, gạch dưới hoặc gạch ngang (tối đa 64 ký tự).');
+                return;
+            }
+            if (rawPassword.length < 12) {
+                showPermissionModal('Mật khẩu mới phải có ít nhất 12 ký tự.');
                 return;
             }
             if (appUsers.some(u => u.username === username)) {
@@ -1165,7 +1145,15 @@
             const editingId = document.getElementById('modal-editing-user-id').value;
             const name = document.getElementById('modal-new-name').value.trim();
             const username = document.getElementById('modal-new-username').value.trim();
-            const rawPassword = document.getElementById('modal-new-password').value.trim();
+            const rawPassword = document.getElementById('modal-new-password').value;
+            if (username && !/^[a-zA-Z0-9_.-]{1,64}$/.test(username)) {
+                showPermissionModal('Tên đăng nhập không hợp lệ.');
+                return;
+            }
+            if (rawPassword && rawPassword.length < 12) {
+                showPermissionModal('Mật khẩu mới phải có ít nhất 12 ký tự.');
+                return;
+            }
             const role = document.getElementById('modal-new-role').value;
 
             const checkboxes = document.querySelectorAll('input[name="modal-permission"]:checked');
@@ -1252,7 +1240,7 @@
                 if (user) {
                     const row = document.createElement('div');
                     row.className = 'flex justify-between border-b border-slate-200 pb-1 text-xs';
-                    row.innerHTML = `<span class="font-bold text-slate-800">${user.name} (${user.username})</span> <span class="text-indigo-600 font-semibold">${user.score} điểm</span>`;
+                    row.innerHTML = `<span class="font-bold text-slate-800">${escapeHtml(user.name)} (${escapeHtml(user.username)})</span> <span class="text-indigo-600 font-semibold">${escapeHtml(user.score)} điểm</span>`;
                     container.appendChild(row);
                 }
             });
@@ -1376,22 +1364,22 @@
                 let actionHtml = '';
                 if (hasPermission('cong_tru_diem') || currentUser.role === 'Admin') {
                     actionHtml += `
-                        <button onclick="openPointModal('${u.username}', 'plus')" class="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-md text-xs font-semibold hover:bg-emerald-100 mr-1">+ Cộng</button>
-                        <button onclick="openPointModal('${u.username}', 'minus')" class="bg-red-50 text-red-600 px-3 py-1 rounded-md text-xs font-semibold hover:bg-red-100 mr-1">- Trừ</button>
+                        <button onclick="openPointModal(${safeJsArg(u.username)}, 'plus')" class="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-md text-xs font-semibold hover:bg-emerald-100 mr-1">+ Cộng</button>
+                        <button onclick="openPointModal(${safeJsArg(u.username)}, 'minus')" class="bg-red-50 text-red-600 px-3 py-1 rounded-md text-xs font-semibold hover:bg-red-100 mr-1">- Trừ</button>
                     `;
                 }
                 if (currentUser.role === 'Admin' || currentUser.role === 'GV') {
-                    actionHtml += `<button onclick="editUser('${u.username}')" class="bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-md text-xs font-semibold hover:bg-indigo-100 mr-1">Sửa</button>`;
+                    actionHtml += `<button onclick="editUser(${safeJsArg(u.username)})" class="bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-md text-xs font-semibold hover:bg-indigo-100 mr-1">Sửa</button>`;
                 }
 
                 tr.innerHTML = `
                     <td class="py-3 px-4 text-center">
-                        <input type="checkbox" value="${u.username}" onclick="updateBulkActionButtonsState()" class="user-checkbox rounded text-indigo-600 cursor-pointer">
+                        <input type="checkbox" value="${escapeHtml(u.username)}" onclick="updateBulkActionButtonsState()" class="user-checkbox rounded text-indigo-600 cursor-pointer">
                     </td>
-                    <td class="py-3 px-4 font-medium text-slate-800">${u.name}</td>
-                    <td class="py-3 px-4 text-slate-500 font-mono text-xs">${u.username}</td>
+                    <td class="py-3 px-4 font-medium text-slate-800">${escapeHtml(u.name)}</td>
+                    <td class="py-3 px-4 text-slate-500 font-mono text-xs">${escapeHtml(u.username)}</td>
                     <td class="py-3 px-4 text-center">${getRoleBadge(u.role || 'Thành Viên')}</td>
-                    <td class="py-3 px-4 text-center font-bold text-indigo-600">${u.score}</td>
+                    <td class="py-3 px-4 text-center font-bold text-indigo-600">${escapeHtml(u.score)}</td>
                     <td class="py-3 px-4 text-right">${actionHtml || '<span class="text-slate-400 italic text-xs">Chỉ xem</span>'}</td>
                 `;
                 tableBody.appendChild(tr);
@@ -1411,14 +1399,14 @@
 
                 let actionHtml = '';
                 if (currentUser.role === 'Admin') {
-                    actionHtml += `<button onclick="editUser('${u.username}')" class="bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-md text-xs font-semibold hover:bg-indigo-100 mr-1">Sửa</button>`;
+                    actionHtml += `<button onclick="editUser(${safeJsArg(u.username)})" class="bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-md text-xs font-semibold hover:bg-indigo-100 mr-1">Sửa</button>`;
                 }
 
                 tr.innerHTML = `
-                    <td class="py-3 px-4 font-medium text-slate-800">${u.name}</td>
-                    <td class="py-3 px-4 text-slate-500 font-mono text-xs">${u.username}</td>
+                    <td class="py-3 px-4 font-medium text-slate-800">${escapeHtml(u.name)}</td>
+                    <td class="py-3 px-4 text-slate-500 font-mono text-xs">${escapeHtml(u.username)}</td>
                     <td class="py-3 px-4 text-center">${getRoleBadge(u.role)}</td>
-                    <td class="py-3 px-4 text-center font-bold text-indigo-600">${u.score}</td>
+                    <td class="py-3 px-4 text-center font-bold text-indigo-600">${escapeHtml(u.score)}</td>
                     <td class="py-3 px-4 text-right">${actionHtml || '<span class="text-slate-400 italic text-xs">Được bảo vệ</span>'}</td>
                 `;
                 tableBody.appendChild(tr);
@@ -1437,14 +1425,14 @@
                     item.className = `bg-slate-50 border-l-4 ${isPlus ? 'border-emerald-500' : 'border-red-500'} border border-slate-200 rounded-lg p-3 space-y-1 text-sm`;
                     item.innerHTML = `
                         <div class="flex justify-between font-semibold text-slate-700">
-                            <span>${isPlus ? 'Cộng điểm' : 'Trừ điểm'}: <strong class="${isPlus ? 'text-emerald-600' : 'text-red-600'}">${isPlus ? '+' : '-'}${log.points}đ</strong></span>
-                            <span class="text-slate-400 font-normal text-xs">${log.time}</span>
+                            <span>${isPlus ? 'Cộng điểm' : 'Trừ điểm'}: <strong class="${isPlus ? 'text-emerald-600' : 'text-red-600'}">${isPlus ? '+' : '-'}${escapeHtml(log.points)}đ</strong></span>
+                            <span class="text-slate-400 font-normal text-xs">${escapeHtml(log.time)}</span>
                         </div>
-                        <p class="text-slate-600"><strong>Thành viên:</strong> ${log.targetName}</p>
-                        <p class="text-slate-600"><strong>Lý do:</strong> ${log.reason}</p>
+                        <p class="text-slate-600"><strong>Thành viên:</strong> ${escapeHtml(log.targetName)}</p>
+                        <p class="text-slate-600"><strong>Lý do:</strong> ${escapeHtml(log.reason)}</p>
                         <div class="flex justify-between items-center text-xs pt-1 border-t border-slate-200 mt-2">
-                            <span class="text-indigo-600 font-medium">Thực hiện bởi: ${log.performedBy}</span>
-                            <span class="text-slate-500 font-mono bg-slate-200 px-1.5 py-0.5 rounded">IP: ${log.ip || '127.0.0.1'}</span>
+                            <span class="text-indigo-600 font-medium">Thực hiện bởi: ${escapeHtml(log.performedBy)}</span>
+                            <span class="text-slate-500 font-mono bg-slate-200 px-1.5 py-0.5 rounded">IP: ${escapeHtml(log.ip || '127.0.0.1')}</span>
                         </div>
                     `;
                     auditContainer.appendChild(item);
@@ -1463,13 +1451,13 @@
                     item.className = 'bg-amber-50/50 border-l-4 border-amber-500 border border-amber-100 rounded-lg p-3 space-y-1 text-sm';
                     item.innerHTML = `
                         <div class="flex justify-between font-semibold text-slate-700">
-                            <span>Hành động: <strong class="text-amber-700">${log.action}</strong></span>
-                            <span class="text-slate-400 font-normal text-xs">${log.time}</span>
+                            <span>Hành động: <strong class="text-amber-700">${escapeHtml(log.action)}</strong></span>
+                            <span class="text-slate-400 font-normal text-xs">${escapeHtml(log.time)}</span>
                         </div>
-                        <p class="text-slate-600"><strong>Tài khoản tác động:</strong> ${log.targetName}</p>
+                        <p class="text-slate-600"><strong>Tài khoản tác động:</strong> ${escapeHtml(log.targetName)}</p>
                         <div class="flex justify-between items-center text-xs pt-1 border-t border-amber-200 mt-2">
-                            <span class="text-indigo-600 font-medium">Thực hiện bởi: ${log.performedBy}</span>
-                            <span class="text-slate-500 font-mono bg-amber-100 px-1.5 py-0.5 rounded">IP: ${log.ip || '127.0.0.1'}</span>
+                            <span class="text-indigo-600 font-medium">Thực hiện bởi: ${escapeHtml(log.performedBy)}</span>
+                            <span class="text-slate-500 font-mono bg-amber-100 px-1.5 py-0.5 rounded">IP: ${escapeHtml(log.ip || '127.0.0.1')}</span>
                         </div>
                     `;
                     securityContainer.appendChild(item);
@@ -1488,10 +1476,10 @@
                     lItem.className = 'bg-indigo-50/50 border border-indigo-100 rounded-lg p-3 flex justify-between items-center text-sm';
                     lItem.innerHTML = `
                         <div>
-                            <span class="font-bold text-slate-700">${l.name}</span> đã đăng nhập 
-                            <span class="text-xs text-slate-500 ml-2 font-mono bg-indigo-100 px-1.5 py-0.5 rounded">IP: ${l.ip || '127.0.0.1'}</span>
+                            <span class="font-bold text-slate-700">${escapeHtml(l.name)}</span> đã đăng nhập 
+                            <span class="text-xs text-slate-500 ml-2 font-mono bg-indigo-100 px-1.5 py-0.5 rounded">IP: ${escapeHtml(l.ip || '127.0.0.1')}</span>
                         </div>
-                        <span class="text-slate-400 text-xs">${l.time}</span>
+                        <span class="text-slate-400 text-xs">${escapeHtml(l.time)}</span>
                     `;
                     loginContainer.appendChild(lItem);
                 });
@@ -1526,7 +1514,11 @@
         document.getElementById('point-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const type = document.getElementById('modal-action-type').value;
-            const points = parseInt(document.getElementById('modal-points').value);
+            const points = Number(document.getElementById('modal-points').value);
+            if (!Number.isSafeInteger(points) || points < 1 || points > 10000) {
+                showPermissionModal('Số điểm phải là số nguyên từ 1 đến 10.000.');
+                return;
+            }
             const reason = document.getElementById('modal-reason').value.trim();
 
             let target = appUsers.find(u => u.username === selectedUserId);
