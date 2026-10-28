@@ -298,6 +298,13 @@
                                         số: 0 thành viên</span>
                                 </div>
                             </div>
+                            <div class="mb-4 flex justify-end">
+                                <label for="member-username-search" class="sr-only">Tìm tài khoản theo tên đăng nhập</label>
+                                <input id="member-username-search" type="search" autocomplete="off"
+                                    oninput="renderDashboard()"
+                                    placeholder="🔎 Tìm theo tên tài khoản..."
+                                    class="w-full sm:max-w-sm border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-left border-collapse">
                                     <thead>
@@ -1415,11 +1422,25 @@
         };
 
         window.renderDashboard = function () {
-            const publicUsers = appUsers.filter(u => u.role !== 'Admin' && u.role !== 'GV');
-            document.getElementById('total-members-count').textContent = `Tổng số: ${publicUsers.length} thành viên`;
+            const allPublicUsers = appUsers.filter(u => u.role !== 'Admin' && u.role !== 'GV');
+            const searchTerm = normalizeUsername(document.getElementById('member-username-search')?.value);
+            const publicUsers = searchTerm
+                ? allPublicUsers.filter(u => normalizeUsername(u.username).includes(searchTerm))
+                : allPublicUsers;
+            document.getElementById('total-members-count').textContent = searchTerm
+                ? `Hiển thị ${publicUsers.length}/${allPublicUsers.length} thành viên`
+                : `Tổng số: ${allPublicUsers.length} thành viên`;
 
             const tableBody = document.getElementById('member-table-body');
             tableBody.innerHTML = '';
+
+            if (publicUsers.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="6" class="py-8 px-4 text-center text-slate-400">${searchTerm ? 'Không tìm thấy tài khoản phù hợp.' : 'Chưa có thành viên.'}</td>`;
+                tableBody.appendChild(row);
+                updateBulkActionButtonsState();
+                return;
+            }
 
             publicUsers.forEach(u => {
                 const tr = document.createElement('tr');
@@ -1448,6 +1469,7 @@
                 `;
                 tableBody.appendChild(tr);
             });
+            updateBulkActionButtonsState();
         };
 
         window.renderAdminGvDashboard = function () {
