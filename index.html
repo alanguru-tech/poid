@@ -13,8 +13,20 @@
 
 <body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col justify-between">
 
+    <div id="app-startup" class="fixed inset-0 bg-slate-900 z-[110] flex items-center justify-center p-4 text-white">
+        <p class="text-sm">Đang kiểm tra trạng thái hệ thống...</p>
+    </div>
+
+    <div id="maintenance-screen" class="hidden fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-8 shadow-2xl text-center">
+            <div class="text-5xl mb-5" aria-hidden="true">🛠️</div>
+            <h1 class="text-2xl font-bold text-slate-800 mb-3">Trang web hiện tại đang bảo trì</h1>
+            <p class="text-slate-600">hãy liên hệ với quản trị viên để biết thêm</p>
+        </div>
+    </div>
+
     <!-- GIAO DIỆN ĐĂNG NHẬP -->
-    <div id="login-screen" class="fixed inset-0 bg-slate-900 flex items-center justify-center p-4 z-50">
+    <div id="login-screen" class="hidden fixed inset-0 bg-slate-900 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl">
             <div class="text-center mb-6">
                 <h2 class="text-2xl font-bold text-slate-800">Đăng Nhập Hệ Thống</h2>
@@ -608,6 +620,8 @@
         let currentUser = null;
         let selectedUserId = null;
         let parsedExcelData = [];
+        let maintenanceReady = false;
+        let maintenanceEnabled = false;
 
         let stopDataListeners = [];
         const normalizeUsername = value => String(value || '').normalize('NFKC').trim().toLowerCase();
@@ -660,6 +674,29 @@
                     await signOut(auth);
                     showPermissionModal('Không thể tải hồ sơ. Kiểm tra tài khoản và Firestore Rules.');
                 }
+            });
+        }
+
+        function initMaintenanceListener() {
+            onSnapshot(doc(db, 'siteStatus', 'maintenance'), snapshot => {
+                maintenanceEnabled = snapshot.exists() && snapshot.data().enabled === true;
+                maintenanceReady = true;
+                document.getElementById('app-startup').classList.add('hidden');
+                document.getElementById('maintenance-screen').classList.toggle('hidden', !maintenanceEnabled);
+                if (maintenanceEnabled) {
+                    currentUser = null;
+                    clearDataListeners();
+                    if (auth.currentUser) signOut(auth);
+                }
+                checkAuthState();
+            }, error => {
+                console.error('Không đọc được trạng thái bảo trì:', error);
+                // If the status cannot be fetched, allow the app to load; Firestore Rules
+                // continue to protect every application collection independently.
+                maintenanceReady = true;
+                maintenanceEnabled = false;
+                document.getElementById('app-startup').classList.add('hidden');
+                checkAuthState();
             });
         }
 
@@ -767,6 +804,19 @@
         function checkAuthState() {
             const loginScreen = document.getElementById('login-screen');
             const mainApp = document.getElementById('main-app');
+
+            if (!maintenanceReady) {
+                loginScreen.classList.add('hidden');
+                mainApp.classList.add('hidden');
+                return;
+            }
+            if (maintenanceEnabled) {
+                loginScreen.classList.add('hidden');
+                mainApp.classList.add('hidden');
+                document.getElementById('maintenance-screen').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('maintenance-screen').classList.add('hidden');
 
             if (currentUser) {
                 loginScreen.classList.add('hidden');
@@ -1628,6 +1678,7 @@
         });
 
         // Khởi chạy hệ thống lúc đầu
+        initMaintenanceListener();
         initSystem();
     </script>
 </body>
