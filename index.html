@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google" content="notranslate">
-    <title>Hệ Thống Quản Lý Điểm Trường Học</title>
+    <title>Hệ Thống Quản Lý Điểm - Firebase Firestore</title>
     <link rel="icon" type="image/png" href="icon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <style>
         @keyframes maintenance-enter {
             from { opacity: 0; transform: translateY(-34px) scale(.97); }
@@ -1116,7 +1116,7 @@
             if (myLogs.length === 0) {
                 container.innerHTML = `<p class="text-slate-400 text-xs italic text-center py-16">Bạn chưa có lịch sử cộng/trừ điểm nào.</p>`;
             } else {
-                myLogs.slice().reverse().forEach(log => {
+                newestLogsFirst(myLogs).forEach(log => {
                     const isPlus = log.type === 'plus';
                     const item = document.createElement('div');
                     item.className = `bg-slate-50 border-l-4 ${isPlus ? 'border-emerald-500' : 'border-red-500'} border border-slate-200 rounded-lg p-3 space-y-1 text-sm`;
@@ -1183,6 +1183,31 @@
             return date && !Number.isNaN(date.getTime())
                 ? date.toLocaleString('vi-VN')
                 : '—';
+        }
+
+        function logTimestamp(log) {
+            const value = log?.createdAt ?? log?.time;
+            if (value?.toMillis) return value.toMillis();
+            if (value?.toDate) return value.toDate().getTime();
+            if (value instanceof Date) return value.getTime();
+            if (typeof value === 'number') return value;
+            if (typeof value === 'string') {
+                // Older logs may store time as "HH:mm:ss DD/MM/YYYY".
+                const legacy = value.match(/^(\d{1,2}):(\d{2}):(\d{2})\s+(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+                if (legacy) {
+                    const [, hour, minute, second, day, month, year] = legacy;
+                    return new Date(+year, +month - 1, +day, +hour, +minute, +second).getTime();
+                }
+                const parsed = Date.parse(value);
+                if (!Number.isNaN(parsed)) return parsed;
+            }
+            return 0;
+        }
+
+        function newestLogsFirst(logs) {
+            return logs.slice().sort((a, b) =>
+                logTimestamp(b) - logTimestamp(a) || String(b.id || '').localeCompare(String(a.id || ''))
+            );
         }
 
         async function saveScoreChange(user, newScore, reason, type, points) {
@@ -1617,7 +1642,7 @@
             if (auditLogs.length === 0) {
                 auditContainer.innerHTML = `<p class="text-slate-400 text-xs italic text-center py-4">Chưa có lịch sử cộng trừ điểm.</p>`;
             } else {
-                auditLogs.slice().reverse().forEach(log => {
+                newestLogsFirst(auditLogs).forEach(log => {
                     const isPlus = log.type === 'plus';
                     const isSet = log.type === 'set';
                     const item = document.createElement('div');
@@ -1645,7 +1670,7 @@
             if (securityLogs.length === 0) {
                 securityContainer.innerHTML = `<p class="text-slate-400 text-xs italic text-center py-4">Chưa có nhật ký thay đổi tài khoản hoặc bảo mật.</p>`;
             } else {
-                securityLogs.slice().reverse().forEach(log => {
+                newestLogsFirst(securityLogs).forEach(log => {
                     const item = document.createElement('div');
                     item.className = 'bg-amber-50/50 border-l-4 border-amber-500 border border-amber-100 rounded-lg p-3 space-y-1 text-sm';
                     item.innerHTML = `
@@ -1670,7 +1695,7 @@
             if (loginLogs.length === 0) {
                 loginContainer.innerHTML = `<p class="text-slate-400 text-xs italic text-center py-2">Chưa có lịch sử đăng nhập.</p>`;
             } else {
-                loginLogs.slice().reverse().forEach(l => {
+                newestLogsFirst(loginLogs).forEach(l => {
                     const lItem = document.createElement('div');
                     lItem.className = 'bg-indigo-50/50 border border-indigo-100 rounded-lg p-3 flex justify-between items-center text-sm';
                     lItem.innerHTML = `
