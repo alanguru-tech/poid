@@ -625,6 +625,7 @@
     <!-- JAVASCRIPT TÍCH HỢP FIREBASE FIRESTORE & THỜI GIAN THỰC (REAL-TIME ONSNAPSHOT) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app-check.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
         import { getFirestore, collection, doc, getDoc, addDoc, onSnapshot, query, where, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
@@ -640,6 +641,10 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const appCheck = initializeAppCheck(app, {
+            provider: new ReCaptchaEnterpriseProvider('6LcjcQguAAAAOCvmI2R6NtMTSFtrgIyQFPhzJgF'),
+            isTokenAutoRefreshEnabled: true
+        });
         const analytics = getAnalytics(app);
         const db = getFirestore(app);
         const auth = getAuth(app);
