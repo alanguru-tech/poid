@@ -5,10 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google" content="notranslate">
-    <title>Hệ Thống Quản Lý Điểm</title>
+    <title>Hệ Thống Quản Lý Điểm - Firebase Firestore</title>
     <link rel="icon" type="image/png" href="icon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <style>
         @keyframes maintenance-enter {
             from { opacity: 0; transform: translateY(-34px) scale(.97); }
@@ -349,7 +348,7 @@
                             <div class="mb-4 flex justify-end">
                                 <label for="member-username-search" class="sr-only">Tìm tài khoản theo tên đăng nhập</label>
                                 <input id="member-username-search" type="search" autocomplete="off"
-                                    oninput="renderDashboard()"
+                                    oninput="scheduleDashboardRender()"
                                     placeholder=" Tìm theo tên tài khoản..."
                                     class="w-full sm:max-w-sm border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                             </div>
@@ -656,6 +655,9 @@
         let currentUser = null;
         let selectedUserId = null;
         let parsedExcelData = [];
+        let xlsxLoadPromise = null;
+        let dashboardRenderTimer = null;
+        let maintenancePetalsInitialized = false;
         let maintenanceReady = false;
         let maintenanceEnabled = false;
 
@@ -720,6 +722,7 @@
                 document.getElementById('app-startup').classList.add('hidden');
                 document.getElementById('maintenance-screen').classList.toggle('hidden', !maintenanceEnabled);
                 if (maintenanceEnabled) {
+                    initMaintenancePetals();
                     currentUser = null;
                     clearDataListeners();
                     if (auth.currentUser) signOut(auth);
@@ -727,16 +730,22 @@
                 checkAuthState();
             }, error => {
                 console.error('Không đọc được trạng thái bảo trì:', error);
-                // If the status cannot be fetched, allow the app to load; Firestore Rules
-                // continue to protect every application collection independently.
+                // Fail closed when the maintenance gate cannot be verified.
                 maintenanceReady = true;
-                maintenanceEnabled = false;
+                maintenanceEnabled = true;
                 document.getElementById('app-startup').classList.add('hidden');
+                document.getElementById('maintenance-screen').classList.remove('hidden');
+                initMaintenancePetals();
+                currentUser = null;
+                clearDataListeners();
+                if (auth.currentUser) signOut(auth);
                 checkAuthState();
             });
         }
 
         function initMaintenancePetals() {
+            if (maintenancePetalsInitialized) return;
+            maintenancePetalsInitialized = true;
             const container = document.getElementById('maintenance-petals');
             const sources = [
                 'https://i.postimg.cc/8PNmv3y9/image_removebg_preview.png',
@@ -907,7 +916,30 @@
             }
         }
 
-        window.downloadExcelTemplate = function () {
+        function loadXlsxLibrary() {
+            if (window.XLSX) return Promise.resolve(window.XLSX);
+            if (xlsxLoadPromise) return xlsxLoadPromise;
+            xlsxLoadPromise = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+                script.async = true;
+                script.onload = () => window.XLSX ? resolve(window.XLSX) : reject(new Error('XLSX library unavailable'));
+                script.onerror = () => reject(new Error('Could not load XLSX library'));
+                document.head.appendChild(script);
+            }).catch(error => {
+                xlsxLoadPromise = null;
+                throw error;
+            });
+            return xlsxLoadPromise;
+        }
+
+        window.downloadExcelTemplate = async function () {
+            try {
+                await loadXlsxLibrary();
+            } catch (error) {
+                showPermissionModal('Không tải được công cụ Excel. Vui lòng kiểm tra kết nối mạng rồi thử lại.');
+                return;
+            }
             const templateData = [
                 { "TT": 1, "name": "Nguyễn Văn A", "user": "nguyenvana", "point": 100, "password": "" },
                 { "TT": 2, "name": "Trần Thị B", "user": "tranthib", "point": 100, "password": "" }
@@ -918,9 +950,15 @@
             XLSX.writeFile(workbook, "mau.xlsx");
         };
 
-        window.handleExcelUpload = function (e) {
+        window.handleExcelUpload = async function (e) {
             const file = e.target.files[0];
             if (!file) return;
+            try {
+                await loadXlsxLibrary();
+            } catch (error) {
+                showPermissionModal('Không tải được công cụ Excel. Vui lòng kiểm tra kết nối mạng rồi thử lại.');
+                return;
+            }
             const reader = new FileReader();
             reader.onload = function (e) {
                 try {
@@ -1236,13 +1274,17 @@
         // ĐĂNG NHẬP QUA FIREBASE AUTHENTICATION
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const submitButton = e.currentTarget.querySelector('button[type="submit"]');
+            if (submitButton.disabled) return;
+            submitButton.disabled = true;
+            submitButton.setAttribute('aria-busy', 'true');
             const u = document.getElementById('login-username').value.trim();
             const rawPassword = document.getElementById('login-password').value;
             try {
                 const usernameKey = usernameKeyFor(u);
                 const usernameSnap = await getDoc(doc(db, 'usernames', usernameKey));
                 if (!usernameSnap.exists()) {
-                    showPermissionModal('Tên đăng nhập không tồn tại hoặc chưa được chuyển đổi.');
+                    showPermissionModal('Tên đăng nhập hoặc mật khẩu không chính xác.');
                     return;
                 }
                 await signInWithEmailAndPassword(auth, usernameSnap.data().email, rawPassword);
@@ -1251,6 +1293,9 @@
                 showPermissionModal(error.code === 'auth/invalid-credential'
                     ? 'Tên đăng nhập hoặc mật khẩu không chính xác.'
                     : 'Không thể đăng nhập. Kiểm tra tài khoản hoặc kết nối mạng.');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.removeAttribute('aria-busy');
             }
         });
 
@@ -1558,6 +1603,11 @@
             showPermissionModal(`Đã cập nhật điểm thành công cho ${idsToEdit.length} tài khoản trên Firestore!`);
         };
 
+        window.scheduleDashboardRender = function () {
+            window.clearTimeout(dashboardRenderTimer);
+            dashboardRenderTimer = window.setTimeout(() => window.renderDashboard(), 120);
+        };
+
         window.renderDashboard = function () {
             const allPublicUsers = appUsers.filter(u => u.role !== 'Admin' && u.role !== 'GV');
             const searchTerm = normalizeUsername(document.getElementById('member-username-search')?.value);
@@ -1765,7 +1815,6 @@
         });
 
         // Khởi chạy hệ thống lúc đầu
-        initMaintenancePetals();
         initMaintenanceListener();
         initSystem();
     </script>
